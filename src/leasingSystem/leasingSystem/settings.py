@@ -75,12 +75,22 @@ WSGI_APPLICATION = 'leasingSystem.wsgi.application'
 # https://docs.djangoproject.com/en/4.1/ref/settings/#databases
 
 DATABASES = {
+    # 雲端 mysql
+    # 'default': {
+    #     'ENGINE': 'django.db.backends.mysql',
+    #     'NAME': 'test', # Schema名稱
+    #     'USER': 'admin',
+    #     'PASSWORD': 'ncupassword',
+    #     'HOST': 'test.cuzgtfhwefaa.ap-northeast-1.rds.amazonaws.com',
+    # }
+    
+    # 本地端 mysql
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'test', # Schema名稱
-        'USER': 'admin',
-        'PASSWORD': 'ncupassword',
-        'HOST': 'test.cuzgtfhwefaa.ap-northeast-1.rds.amazonaws.com',
+        'NAME': 'myschema', # Schema名稱
+        'USER': 'root',
+        'PASSWORD': 'toor',
+        'HOST': '',
     }
 }
 
