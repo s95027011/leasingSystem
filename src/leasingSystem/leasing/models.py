@@ -1,7 +1,6 @@
 from django.db import models
 from django.core.validators import MinLengthValidator
 from django.utils import timezone
-from django.contrib.auth.models import User
 import uuid
 
 # Create your models here.
@@ -96,9 +95,7 @@ class Transaction(models.Model):
 class Member(models.Model):
 
     SEX = (('0', '女性'), ('1', '男性'), ('2', '不選擇'))
-    #id = models.UUIDField(primary_key=True, default=uuid.uuid4)
-    user_id = models.OneToOneField(
-        User, primary_key=True, on_delete=models.CASCADE)
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4)
     #member_name = models.CharField(blank=False, max_length=20)
     member_sex = models.CharField(choices=SEX, max_length=1, help_text='輸入性別')
     member_addr = models.CharField(blank=False, max_length=50)
@@ -130,8 +127,8 @@ class Order(models.Model):
     member = models.ForeignKey(
         'Member', on_delete=models.SET_NULL, null=True)
     item = models.ManyToManyField(Item)
-    order_time = models.TimeField(auto_now_add=timezone.now)
-    rent_time = models.TimeField()
+    order_time = models.DateTimeField(auto_now_add=timezone.now)
+    rent_time = models.DateTimeField(auto_now_add=timezone.now)
     order_status = models.CharField(
         choices=ORDER_STATUS, max_length=1, help_text='商品狀態')
     order_price = models.PositiveIntegerField()
@@ -139,6 +136,12 @@ class Order(models.Model):
     return_time = models.TimeField()
 #### #### #### #### #### #### #### ####
 
+
 #### #### #### #### #### #### #### ####
 # defin DueRecord
+class Duerecord(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4)
+    order = models.ForeignKey(Order, on_delete=models.CASCADE)
+    due_day = models.DateField(auto_now_add=timezone.now)
+
 #### #### #### #### #### #### #### ####
