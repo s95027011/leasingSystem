@@ -1,6 +1,7 @@
 from django.db import models
 from django.core.validators import MinLengthValidator
 from django.utils import timezone
+from django.contrib.auth.models import User
 import uuid
 
 # Create your models here.
@@ -58,10 +59,14 @@ class Item(models.Model):
 class Transaction(models.Model):
     # 交易方式
     PAYMENT_METHOD = (
-        ('c', '信用卡')
+        ('c', '信用卡'),
         ('t', '轉帳'),
     )
 
+    CARD_TYPE = (
+        ('v', 'VISA'),
+        ('m', 'Master')
+    )
     # Transaction Info
     id = models.UUIDField(primary_key=True, default=uuid.uuid4)
     payment = models.CharField(
@@ -70,6 +75,7 @@ class Transaction(models.Model):
         default='c',  # 預設信用卡
         help_text='選擇付款方式',
     )
+
     trans_time = models.DateTimeField(auto_now_add=timezone.now)  # 現在時區時間
 
     # CardInfo
@@ -77,7 +83,7 @@ class Transaction(models.Model):
     bank_id = models.CharField(max_length=7, validators=[
         MinLengthValidator(7)], blank=True)
     # Card Type ?
-    card_type = models.CharField()
+    card_type = models.CharField(choices=CARD_TYPE, max_length=1)
     card_id = models.CharField(max_length=16, validators=[
         MinLengthValidator(16)], blank=True)
     dueD_date = models.CharField(max_length=4, validators=[
@@ -88,16 +94,20 @@ class Transaction(models.Model):
 #### #### #### #### #### #### #### ####
 # defin Member
 class Member(models.Model):
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4)
-    member_name = models.CharField(blank=False)
-    member_sex = models.CharField(blank=True)
-    member_addr = models.CharField(blank=False)
-    member_email = models.EmailField(max_length=254)
+
+    SEX = (('0', '女性'), ('1', '男性'), ('2', '不選擇'))
+    #id = models.UUIDField(primary_key=True, default=uuid.uuid4)
+    user_id = models.OneToOneField(
+        User, primary_key=True, on_delete=models.CASCADE)
+    #member_name = models.CharField(blank=False, max_length=20)
+    member_sex = models.CharField(choices=SEX, max_length=1, help_text='輸入性別')
+    member_addr = models.CharField(blank=False, max_length=50)
+    #member_email = models.EmailField(max_length=254)
     member_birth = models.DateField(blank=True)
-    member_phone = models.PhoneNumberField(blank=False)
-    member_register_date = models.DateField(auto_now_add=timezone.now)
-    member_login = models.DateField(auto_now_add=timezone.now)  # 現在登入時間
-    member_pwd = models.CharField(max_length=20)
+   # member_phone = models.PhoneNumberField(blank=False)
+    # member_register_date = models.DateField(auto_now_add=timezone.now)
+   # member_login = models.DateField(auto_now_add=timezone.now)  # 現在登入時間
+   # member_pwd = models.CharField(max_length=20)
     # Password in django https://stackoverflow.com/questions/17523263/how-to-create-password-field-in-model-django
 #### #### #### #### #### #### #### ####
 
@@ -115,11 +125,17 @@ class Cart(models.Model):
 
 
 class Order(models.Model):
+    ORDER_STATUS = (('0', '配送中'), ('1', '尚未配送'), ('2', '已送達'))
     id = models.UUIDField(primary_key=True, default=uuid.uuid4)
+    member = models.ForeignKey(
+        'Member', on_delete=models.SET_NULL, null=True)
+    item = models.ManyToManyField(Item)
     order_time = models.TimeField(auto_now_add=timezone.now)
     rent_time = models.TimeField()
-    order_status = models.CharField()
+    order_status = models.CharField(
+        choices=ORDER_STATUS, max_length=1, help_text='商品狀態')
     order_price = models.PositiveIntegerField()
+
     return_time = models.TimeField()
 #### #### #### #### #### #### #### ####
 
