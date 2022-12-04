@@ -7,15 +7,13 @@ import uuid
 
 #### #### #### #### #### #### #### ####
 # define Product type
-
-
 class Type(models.Model):
     name = models.CharField(max_length=20)
 #### #### #### #### #### #### #### ####
 
 
 #### #### #### #### #### #### #### ####
-# defin Product
+# define Product
 class Product(models.Model):
     # 商品規格
     PRODUCT_SIZE = (
@@ -91,9 +89,8 @@ class Transaction(models.Model):
 
 
 #### #### #### #### #### #### #### ####
-# defin Member
+# define Member
 class Member(models.Model):
-
     SEX = (('0', '女性'), ('1', '男性'), ('2', '不選擇'))
     id = models.UUIDField(primary_key=True, default=uuid.uuid4)
     #member_name = models.CharField(blank=False, max_length=20)
@@ -109,21 +106,20 @@ class Member(models.Model):
 #### #### #### #### #### #### #### ####
 
 #### #### #### #### #### #### #### ####
-# defin Cart
-
-
+# define Cart
 class Cart(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4)
+    member = models.OneToOneField(Member, on_delete=models.SET_NULL, null=True)
+    product = models.ManyToManyField(Product)
     cart_count = models.PositiveIntegerField()
 #### #### #### #### #### #### #### ####
 
 #### #### #### #### #### #### #### ####
-# defin Order
-
-
+# define Order
 class Order(models.Model):
     ORDER_STATUS = (('0', '配送中'), ('1', '尚未配送'), ('2', '已送達'))
     id = models.UUIDField(primary_key=True, default=uuid.uuid4)
+    transaction = models.OneToOneField(Transaction, on_delete=models.SET_NULL, null=True)
     member = models.ForeignKey(
         'Member', on_delete=models.SET_NULL, null=True)
     item = models.ManyToManyField(Item)
@@ -138,10 +134,9 @@ class Order(models.Model):
 
 
 #### #### #### #### #### #### #### ####
-# defin DueRecord
+# define DueRecord
 class Duerecord(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4)
     order = models.ForeignKey(Order, on_delete=models.CASCADE)
     due_day = models.DateField(auto_now_add=timezone.now)
-
 #### #### #### #### #### #### #### ####
