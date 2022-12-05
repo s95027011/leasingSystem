@@ -1,39 +1,78 @@
 from rest_framework import serializers
 from leasing.models import Type, Product, Item, Transaction, Member, Cart, Order, Duerecord
 
-
-class leasingSerializer(serializers.ManyRelatedField):
-    class Type:
+class TypeSerializer(serializers.Serializer):
+    class Meta:
         model = Type
-        fields = ('id', 'name')
+        fields = '__all__'
 
-    class Product:
+class ProductSerializer(serializers.Serializer):
+    class Meta:
         model = Product
-        fields = ('id', 'product_name', 'product_szie', 'product_type',
-                  'product_price', 'product_fine')
+        fields = '__all__'
 
-    class Item:
+class ItemSerializer(serializers.Serializer):
+    class Meta:
         model = Item
-        fields = ('id', 'product', 'item_status')
+        fields = '__all__'
 
-    class Transaction:
+class Transaction(serializers.Serializer):
+    class Meta:
         model = Transaction
-        fields = ('id', 'payment', 'trans_time', 'bank_id',
-                  'card_type', 'card_id', 'dueD_date')
+        fields = '__all__'
 
-    class Member:
+class MemberSerializer(serializers.Serializer):
+    class Meta:
         model = Member
-        fields = ('id', 'member_sex', 'member_addr', 'member_birth')
+        fields = '__all__'
 
-    class Cart:
+class CartSerializer(serializers.Serializer):
+    class Meta:
         model = Cart
-        fields = ('id', 'member', 'product', 'cart_count')
+        fields = '__all__'
 
-    class Order:
+class OrderSerializer(serializers.Serializer):
+    class Meta:
         model = Order
-        fields = ('id', 'transaction', 'member', 'item', 'order_time',
-                  'rent_time', 'order_status', 'order_price', 'return_time')
+        fields = '__all__'
 
-    class Duerecord:
+class DuerecordSerializer(serializers.Serializer):
+    class Meta:
         model = Duerecord
-        fields = ('id', 'order', 'due_day')
+        fields = '__all__'
+
+# class leasingSerializer(serializers.ManyRelatedField):
+#     class Type:
+#         model = Type
+#         fields = ('id', 'name')
+
+#     class Product:
+#         model = Product
+#         fields = ('id', 'product_name', 'product_szie', 'product_type',
+#                   'product_price', 'product_fine')
+
+#     class Item:
+#         model = Item
+#         fields = ('id', 'product', 'item_status')
+
+#     class Transaction:
+#         model = Transaction
+#         fields = ('id', 'payment', 'trans_time', 'bank_id',
+#                   'card_type', 'card_id', 'dueD_date')
+
+#     class Member:
+#         model = Member
+#         fields = ('id', 'member_sex', 'member_addr', 'member_birth')
+
+#     class Cart:
+#         model = Cart
+#         fields = ('id', 'member', 'product', 'cart_count')
+
+#     class Order:
+#         model = Order
+#         fields = ('id', 'transaction', 'member', 'item', 'order_time',
+#                   'rent_time', 'order_status', 'order_price', 'return_time')
+
+#     class Duerecord:
+#         model = Duerecord
+#         fields = ('id', 'order', 'due_day')
