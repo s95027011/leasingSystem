@@ -37,6 +37,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'rest_framework',
     'leasing',
 ]
 
@@ -55,7 +56,7 @@ ROOT_URLCONF = 'leasingSystem.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [os.path.join(BASE_DIR, 'templates')], # 畫面view.py
+        'DIRS': [os.path.join(BASE_DIR, 'templates')],  # 畫面view.py
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -83,11 +84,11 @@ DATABASES = {
     #     'PASSWORD': 'ncupassword',
     #     'HOST': 'test.cuzgtfhwefaa.ap-northeast-1.rds.amazonaws.com',
     # }
-    
+
     # 本地端 mysql
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'myschema', # Schema名稱
+        'NAME': 'myschema',  # Schema名稱
         'USER': 'root',
         'PASSWORD': 'toor',
         'HOST': '',
