@@ -14,12 +14,25 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 from django.contrib import admin
-from django.urls import path, re_path
+from django.urls import path, re_path, include
 from .view import home_page # view的class
 
+from rest_framework.routers import DefaultRouter
+from leasing import views
+
+router = DefaultRouter()
+router.register(r'productType', views.TypeViewSet)
+router.register(r'product', views.ProductViewSet)
+router.register(r'item', views.ItemViewSet)
+router.register(r'transaction', views.TransactionViewSet)
+router.register(r'member', views.MemberViewSet)
+router.register(r'cart', views.CartViewSet)
+router.register(r'order', views.OrderViewSet)
+router.register(r'duerecord', views.DuerecordViewSet)
 
 urlpatterns = [
     path('', home_page),
     # re_path(r'^admin?/'$) # 正規化
     path('admin/', admin.site.urls),
+    re_path(r'^api/', include(router.urls))
 ]
