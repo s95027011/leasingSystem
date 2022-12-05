@@ -3,6 +3,8 @@ from django.core.validators import MinLengthValidator
 from django.utils import timezone
 import uuid
 
+from django.contrib.auth.models import User
+
 # Create your models here.
 
 #### #### #### #### #### #### #### ####
@@ -93,6 +95,7 @@ class Transaction(models.Model):
 class Member(models.Model):
     SEX = (('0', '女性'), ('1', '男性'), ('2', '不選擇'))
     id = models.UUIDField(primary_key=True, default=uuid.uuid4)
+    user = models.OneToOneField(User, on_delete=models.CASCADE, default='')
     #member_name = models.CharField(blank=False, max_length=20)
     member_sex = models.CharField(choices=SEX, max_length=1, help_text='輸入性別')
     member_addr = models.CharField(blank=False, max_length=50)
