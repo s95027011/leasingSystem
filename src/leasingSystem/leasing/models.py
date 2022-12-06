@@ -94,7 +94,7 @@ class Transaction(models.Model):
 # define Member
 class Member(models.Model):
     SEX = (('0', '女性'), ('1', '男性'), ('2', '不選擇'))
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4)
+    # id = models.UUIDField(primary_key=True, default=uuid.uuid4)
     user = models.OneToOneField(User, on_delete=models.CASCADE, default='')
     #member_name = models.CharField(blank=False, max_length=20)
     member_sex = models.CharField(choices=SEX, max_length=1, help_text='輸入性別')
