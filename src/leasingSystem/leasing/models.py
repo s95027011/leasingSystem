@@ -4,17 +4,13 @@ from django.utils import timezone
 import uuid
 
 from django.contrib.auth.models import User
-
+from phonenumber_field.modelfields import PhoneNumberField
 # Create your models here.
 
-#### #### #### #### #### #### #### ####
 # define Product type
 class Type(models.Model):
     name = models.CharField(max_length=20)
-#### #### #### #### #### #### #### ####
 
-
-#### #### #### #### #### #### #### ####
 # define Product
 class Product(models.Model):
     # 商品規格
@@ -24,7 +20,6 @@ class Product(models.Model):
         ('L', 'large'),
         ('XL', 'extra large'),
     )
-
     product_name = models.CharField(max_length=20)
     product_size = models.CharField(
         max_length=2,
@@ -34,14 +29,14 @@ class Product(models.Model):
     product_type = models.ManyToManyField(Type, help_text='服裝類型')  # 多對多?
     product_price = models.PositiveIntegerField()
     product_fine = models.PositiveIntegerField()
-#### #### #### #### #### #### #### ####
 
-
-#### #### #### #### #### #### #### ####
 # define Item
 class Item(models.Model):
     ITEM_STATUS = (
-
+        ('0', '上架'),   # update
+        ('1', '已出租'),
+        ('2', '未上架'),   # create  
+        ('3', '下架'), # delete
     )
     id = models.UUIDField(primary_key=True, default=uuid.uuid4)
     product = models.ForeignKey(
@@ -49,17 +44,15 @@ class Item(models.Model):
     item_status = models.CharField(
         max_length=1,
         choices=ITEM_STATUS,
+        default='2',
         help_text='Item 狀態')
-#### #### #### #### #### #### #### ####
 
 
-#### #### #### #### #### #### #### ####
 # define transaction table
 class Transaction(models.Model):
     # 交易方式
     PAYMENT_METHOD = (
         ('c', '信用卡'),
-        ('t', '轉帳'),
     )
 
     CARD_TYPE = (
@@ -87,10 +80,8 @@ class Transaction(models.Model):
         MinLengthValidator(16)], blank=True)
     dueD_date = models.CharField(max_length=4, validators=[
         MinLengthValidator(4)], blank=True)
-#### #### #### #### #### #### #### ####
 
 
-#### #### #### #### #### #### #### ####
 # define Member
 class Member(models.Model):
     SEX = (('0', '女性'), ('1', '男性'), ('2', '不選擇'))
@@ -101,23 +92,22 @@ class Member(models.Model):
     member_addr = models.CharField(blank=False, max_length=50)
     #member_email = models.EmailField(max_length=254)
     member_birth = models.DateField(blank=True)
-   # member_phone = models.PhoneNumberField(blank=False)
+    #member_phone = PhoneNumberField(blank=False)
+
+    
     # member_register_date = models.DateField(auto_now_add=timezone.now)
    # member_login = models.DateField(auto_now_add=timezone.now)  # 現在登入時間
    # member_pwd = models.CharField(max_length=20)
     # Password in django https://stackoverflow.com/questions/17523263/how-to-create-password-field-in-model-django
-#### #### #### #### #### #### #### ####
 
-#### #### #### #### #### #### #### ####
 # define Cart
 class Cart(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4)
     member = models.OneToOneField(Member, on_delete=models.SET_NULL, null=True)
     product = models.ManyToManyField(Product)
     cart_count = models.PositiveIntegerField()
-#### #### #### #### #### #### #### ####
 
-#### #### #### #### #### #### #### ####
+
 # define Order
 class Order(models.Model):
     ORDER_STATUS = (('0', '配送中'), ('1', '尚未配送'), ('2', '已送達'))
@@ -131,15 +121,12 @@ class Order(models.Model):
     order_status = models.CharField(
         choices=ORDER_STATUS, max_length=1, help_text='商品狀態')
     order_price = models.PositiveIntegerField()
-
     return_time = models.TimeField()
-#### #### #### #### #### #### #### ####
 
 
-#### #### #### #### #### #### #### ####
 # define DueRecord
 class Duerecord(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4)
     order = models.ForeignKey(Order, on_delete=models.CASCADE)
     due_day = models.DateField(auto_now_add=timezone.now)
-#### #### #### #### #### #### #### ####
+

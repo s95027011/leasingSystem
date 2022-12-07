@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from leasing.models import Type, Product, Item, Transaction, Member, Cart, Order, Duerecord
+from leasing.models import Type, Product, Item, Transaction, Member, Cart, Order, Duerecord, User
 
 class TypeSerializer(serializers.ModelSerializer):
     class Meta:
