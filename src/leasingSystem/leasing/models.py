@@ -10,6 +10,8 @@ from phonenumber_field.modelfields import PhoneNumberField
 # define Product type
 class Type(models.Model):
     name = models.CharField(max_length=20)
+    def __str__(self):
+        return self.name
 
 # define Product
 class Product(models.Model):
@@ -30,6 +32,9 @@ class Product(models.Model):
     product_price = models.PositiveIntegerField()
     product_fine = models.PositiveIntegerField()
 
+    def __str__(self):
+        return self.product_name
+
 # define Item
 class Item(models.Model):
     ITEM_STATUS = (
@@ -47,6 +52,8 @@ class Item(models.Model):
         default='2',
         help_text='Item 狀態')
 
+    def __str__(self):
+        return self.product.__str__()
 
 # define transaction table
 class Transaction(models.Model):
