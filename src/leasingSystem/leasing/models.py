@@ -9,7 +9,7 @@ from phonenumber_field.modelfields import PhoneNumberField
 
 # define Product type
 class Type(models.Model):
-    name = models.CharField(max_length=20)
+    name = models.CharField(max_length=20, unique=True)
     def __str__(self):
         return self.name
 
@@ -85,7 +85,7 @@ class Transaction(models.Model):
     card_type = models.CharField(choices=CARD_TYPE, max_length=1)
     card_id = models.CharField(max_length=16, validators=[
         MinLengthValidator(16)], blank=True)
-    dueD_date = models.CharField(max_length=4, validators=[
+    due_date = models.CharField(max_length=4, validators=[
         MinLengthValidator(4)], blank=True)
 
 
@@ -112,7 +112,7 @@ class Cart(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4)
     member = models.OneToOneField(Member, on_delete=models.SET_NULL, null=True)
     product = models.ManyToManyField(Product)
-    cart_count = models.PositiveIntegerField()
+    product_count = models.PositiveIntegerField()
 
 
 # define Order
