@@ -53,7 +53,7 @@ class Item(models.Model):
         help_text='Item 狀態')
 
     def __str__(self):
-        return self.product.__str__()
+        return self.product.__str__() + ' (' + str(self.id) + ')'
 
 # define transaction table
 class Transaction(models.Model):
@@ -87,6 +87,8 @@ class Transaction(models.Model):
         MinLengthValidator(16)], blank=True)
     due_date = models.CharField(max_length=4, validators=[
         MinLengthValidator(4)], blank=True)
+    valid_number = models.CharField(max_length=3, validators=[
+        MinLengthValidator(3)], blank=True)
 
 
 # define Member
@@ -127,7 +129,7 @@ class Order(models.Model):
     rent_time = models.DateTimeField(auto_now_add=timezone.now)
     order_status = models.CharField(
         choices=ORDER_STATUS, max_length=1, help_text='商品狀態')
-    order_price = models.PositiveIntegerField()
+    # order_price = models.PositiveIntegerField()
     return_time = models.TimeField()
 
 

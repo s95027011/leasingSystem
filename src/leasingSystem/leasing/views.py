@@ -15,6 +15,7 @@ class ProductViewSet(viewsets.ModelViewSet):
     serializer_class = ProductSerializer
 
 class ItemViewSet(  mixins.CreateModelMixin,
+                    mixins.ListModelMixin,
                     mixins.RetrieveModelMixin,
                     viewsets.GenericViewSet):
     queryset = Item.objects.all()
@@ -32,13 +33,13 @@ class ItemViewSet(  mixins.CreateModelMixin,
         serializer = ItemSerializer(query, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
     
-    #有問題，需要不下product_id的狀況嗎?#
-    def list(self, request):
+    @action(detail=False)
+    def list_item_by_product(self, request):
         product_id = request.query_params.get('product_id', None)
-        if product_id != None:
-            query = Item.objects.raw('SELECT * FROM leasing_item WHERE product_id = %s', [product_id])
-            serializer = ItemSerializer(query, many=True)
-            return Response(serializer.data, status=status.HTTP_200_OK)
+    
+        query = Item.objects.raw('SELECT * FROM leasing_item WHERE product_id = %s', [product_id])
+        serializer = ItemSerializer(query, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
     
     # 僅能更新商品狀態
     def patch(self, request, pk=None):
@@ -51,9 +52,17 @@ class ItemViewSet(  mixins.CreateModelMixin,
         # return a meaningful error response
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-class TransactionViewSet(viewsets.ModelViewSet):
+class TransactionViewSet(   mixins.CreateModelMixin,
+                            mixins.RetrieveModelMixin,
+                            mixins.DestroyModelMixin,
+                            viewsets.GenericViewSet):
     queryset = Transaction.objects.all()
     serializer_class = TransactionSerializer
+    
+    @action(detail=True, methods="POST")
+    def change_transaction(self, request):
+        
+        pass
 
 class MemberViewSet(viewsets.ModelViewSet):
     queryset = Member.objects.all()
@@ -66,6 +75,13 @@ class CartViewSet(viewsets.ModelViewSet):
 class OrderViewSet(viewsets.ModelViewSet):
     queryset = Order.objects.all()
     serializer_class = OrderSerializer
+
+    @action(detail=False, methods="POST")
+    def list_order_by_member(self, request):
+        member = request.data['member_id']
+        query = Item.objects.raw("SELECT * FROM leasing_order WHERE member_id = %s", [member])
+        serializer = OrderSerializer(query, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 class DuerecordViewSet(viewsets.ModelViewSet):
     queryset = Duerecord.objects.all()
