@@ -90,6 +90,8 @@ class Transaction(models.Model):
     valid_number = models.CharField(max_length=3, validators=[
         MinLengthValidator(3)], blank=True)
 
+    def __str__(self):
+        return str(self.id)
 
 # define Member
 class Member(models.Model):
@@ -130,7 +132,7 @@ class Order(models.Model):
     order_status = models.CharField(
         choices=ORDER_STATUS, max_length=1, help_text='商品狀態')
     # order_price = models.PositiveIntegerField()
-    return_time = models.TimeField()
+    return_time = models.DateTimeField()
 
 
 # define DueRecord

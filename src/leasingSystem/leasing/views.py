@@ -93,7 +93,7 @@ class CartViewSet(  mixins.CreateModelMixin,
         # return a meaningful error response
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    @action(detail=False, methods='post')
+    @action(detail=False, methods=['post'])
     def clear_cart(self, request):
         member_id = request.data['member_id']
         query = Cart.objects.all().filter(member_id__in = member_id).delete()
@@ -109,10 +109,10 @@ class OrderViewSet(viewsets.ModelViewSet):
     queryset = Order.objects.all()
     serializer_class = OrderSerializer
 
-    @action(detail=False, methods="post")
+    @action(detail=False, methods=['post'])
     def list_order_by_member(self, request):
-        member = request.data['member_id']
-        query = Item.objects.all().filter(member_id__in = member)
+        member = request.data['member']
+        query = Order.objects.all().filter(member_id__in = member)
         serializer = OrderSerializer(query, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
