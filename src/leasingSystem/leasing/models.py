@@ -78,13 +78,13 @@ class Transaction(models.Model):
     trans_time = models.DateTimeField(auto_now_add=timezone.now)  # 現在時區時間
 
     # CardInfo
-    # 銀行7碼 (前三法 銀行, 後四碼 分支機構)
+    # 銀行7碼 (前三碼 銀行, 後四碼 分支機構)
     bank_id = models.CharField(max_length=7, validators=[
-        MinLengthValidator(7)], blank=True)
+        MinLengthValidator(7)], blank=True, help_text='前三碼 銀行, 後四碼 分支機構')
     # Card Type ?
     card_type = models.CharField(choices=CARD_TYPE, max_length=1)
     card_id = models.CharField(max_length=16, validators=[
-        MinLengthValidator(16)], blank=True)
+        MinLengthValidator(16)], blank=True, help_text='16碼')
     due_date = models.CharField(max_length=4, validators=[
         MinLengthValidator(4)], blank=True)
     valid_number = models.CharField(max_length=3, validators=[
