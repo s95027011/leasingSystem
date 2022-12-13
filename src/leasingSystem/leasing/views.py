@@ -22,7 +22,7 @@ class ItemViewSet(  mixins.CreateModelMixin,
     serializer_class = ItemSerializer
     
     @action(detail=False)
-    def product_status(self, request):
+    def list_by_product_status(self, request):
         product_id = request.query_params.get('product_id', None)
         available = request.query_params.get('available', None)
         query = ''
