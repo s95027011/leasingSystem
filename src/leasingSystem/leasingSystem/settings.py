@@ -39,11 +39,14 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     'knox',
-    "phonenumber_field",
+    'corsheaders',# 加加加
+    'phonenumber_field',
     'leasing',
 ]
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',# 一定要加第一個
+    'django.middleware.common.CommonMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -54,6 +57,11 @@ MIDDLEWARE = [
 ]
 
 ROOT_URLCONF = 'leasingSystem.urls'
+# 白名單
+CORS_ORIGIN_WHITELIST = (
+    'http://localhost:3000',
+    'http://127.0.0.1:3000',
+)
 
 TEMPLATES = [
     {
