@@ -47,7 +47,7 @@ class Item(models.Model):
     )
     id = models.UUIDField(primary_key=True, default=uuid.uuid4)
     product = models.ForeignKey(
-        'Product', on_delete=models.SET_NULL, null=True)
+        'Product', on_delete=models.CASCADE, null=True)
     item_status = models.CharField(
         max_length=1,
         choices=ITEM_STATUS,

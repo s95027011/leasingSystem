@@ -162,6 +162,26 @@ class OrderViewSet(viewsets.ModelViewSet):
         serializer = OrderSerializer(query, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
+    @action(detail=False, methods=['post'])
+    def list_order_overview(self, request):
+        order_id = request.data['order_id']
+        query = Order.objects.raw(
+        '''
+            select product_name, product_size, product_price, product_image, rent_time, return_time, SUM(product_id) as count
+            from leasing_order as o
+            left join leasing_order_item as order_item
+                on o.id = order_item.order_id
+            left join leasing_item as item
+                on order_item.item_id = item.id
+            left join leasing_product as product
+                on item.product_id = product.id
+            where o.id = %
+            group by product_name, product_size, product_price, product_image, rent_time, return_time;
+        '''
+        , [order_id])
+        
+        pass
+
 
 class DuerecordViewSet(viewsets.ModelViewSet):
     queryset = Duerecord.objects.all()
