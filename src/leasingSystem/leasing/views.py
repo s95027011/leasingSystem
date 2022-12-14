@@ -52,7 +52,6 @@ class TypeViewSet(viewsets.ModelViewSet):
     queryset = Type.objects.all()
     serializer_class = TypeSerializer
 
-
 class ProductViewSet(viewsets.ModelViewSet):
     queryset = Product.objects.all()
     serializer_class = ProductSerializer
@@ -88,7 +87,7 @@ class ItemViewSet(mixins.CreateModelMixin,
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     # 僅能更新商品狀態
-    def partial_update(self, request, pk=None):
+    def patch(self, request, pk=None):
         model = get_object_or_404(Item, pk=pk)
         data = {'item_status': request.data['item_status']}
         serializer = ItemSerializer(model, data=data, partial=True)
@@ -114,7 +113,6 @@ class MemberViewSet(viewsets.ModelViewSet):
 
 
 class CartViewSet(  mixins.CreateModelMixin,
-                    mixins.ListModelMixin,
                     mixins.RetrieveModelMixin,
                     mixins.DestroyModelMixin,
                     viewsets.GenericViewSet):
@@ -123,44 +121,41 @@ class CartViewSet(  mixins.CreateModelMixin,
     def perform_create(self, serializer):
         product = serializer.validated_data['product']
         input_count = serializer.validated_data['product_count']
-        item_count = Item.objects.filter(product_id=product).count()
+        item_count = Item().get_available_product_count(product_id=product)
 
         if input_count<1 or input_count>item_count:
             raise Http404
         return super().perform_create(serializer)
-
-
-    # def list(self, request):
-    #     member_id = request.query_params.get('member_id', None)
-    #     query = Cart.objects.all().filter(member_id__in=member_id)
-    #     serializer = CartSerializer(query, many=True)
-    #     return Response(serializer.data, status=status.HTTP_200_OK)
-
-    def update(self, request, pk=None):
-        count = request.data['product_count']
-        query = ''
-        if count == 0:
-            query = self.destroy(self, request, pk=pk)
-        elif count > 0:
-            model = get_object_or_404(Member, pk=pk)
-            query = Member.objects.filter(pk=model.pk).update(request.data)
-        serializer = MemberSerializer(query)
-        if serializer.is_valid:
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_200_OK)
-        # return a meaningful error response
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+    @action(detail=False, methods=['post'])
+    def list_cart_by_member(self, request):
+        member_id = request.data['member_id']
+        query = Cart.objects.all().filter(member_id__in=member_id)
+        serializer = CartSerializer(query, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    
+    def patch(self, request, pk=None):
+        count = int(request.data['product_count'])
+        product = request.data['product']
+        data = {'product_count': count}
+        avilable_count = Item().get_available_product_count(product_id=product)
+        if count > 0 and count <= avilable_count:
+            model = get_object_or_404(Cart, pk=pk)
+            serializer = CartSerializer(model, data=data, partial=True)
+            if serializer.is_valid():
+                serializer.save()
+                return Response(serializer.data, status=status.HTTP_200_OK)
+            # return a meaningful error response
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            raise Http404
 
     @action(detail=False, methods=['post'])
     def clear_cart(self, request):
         member_id = request.data['member_id']
-        query = Cart.objects.all().filter(member_id__in=member_id).delete()
-        serializer = CartSerializer(query)
-        if serializer.is_valid:
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_200_OK)
-        # return a meaningful error response
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        Cart.objects.all().filter(member_id__in=member_id).delete()
+        return Response('sucess', status=status.HTTP_200_OK)
+        
 
 
 class OrderViewSet( mixins.ListModelMixin,
@@ -170,7 +165,7 @@ class OrderViewSet( mixins.ListModelMixin,
     queryset = Order.objects.all()
     serializer_class = OrderSerializer
 
-    def partial_update(self, request, pk=None):
+    def patch(self, request, pk=None):
         model = get_object_or_404(Order, pk=pk)
         order_status = request.data['order_status']
         data = {'order_stauts' : order_status}

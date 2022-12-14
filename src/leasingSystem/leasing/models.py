@@ -80,6 +80,9 @@ class Item(models.Model):
     def __str__(self):
         return self.product.__str__() + ' (' + str(self.id) + ')'
 
+    def get_available_product_count(self, product_id):
+        return Item.objects.filter(product_id=product_id).filter(item_status='0').count()
+
 # define transaction table
 
 
@@ -147,8 +150,6 @@ class Member(models.Model):
 
 
 # define Cart
-
-
 class Cart(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4)
     member = models.ForeignKey(
