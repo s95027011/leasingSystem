@@ -24,15 +24,15 @@ class RegisterSerializer(serializers.ModelSerializer):
     password2 = serializers.CharField(write_only=True, required=True, style={
                                       'input_type': 'password'})
     email = serializers.EmailField(write_only=True, required=True)
-    phone = serializers.CharField(min_length=8, max_length=10, write_only=True)
     sex = serializers.CharField(max_length=1)
-    birth = serializers.DateField()
     addr = serializers.CharField(max_length=100)
+    birth = serializers.DateField()
+    phone = serializers.CharField(min_length=8, max_length=10, write_only=True)
 
     class Meta:
         model = User
         fields = ('username', 'email', 'password',
-                  'password2', 'phone', 'sex', 'birth', 'addr')
+                  'password2', 'sex', 'addr', 'birth', 'phone')
 
     def validate(self, attrs):
         if attrs['password'] != attrs['password2']:
@@ -50,10 +50,10 @@ class RegisterSerializer(serializers.ModelSerializer):
 
         userprofile = Member.objects.create(
             user=user,
-            member_phone=validated_data['phone'],
             member_sex=validated_data['sex'],
-            member_birth=validated_data['birth'],
             member_addr=validated_data['addr'],
+            member_birth=validated_data['birth'],
+            member_phone=validated_data['phone'],
         )
 
         user.set_password(validated_data['password'])

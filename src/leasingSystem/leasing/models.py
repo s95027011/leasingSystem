@@ -162,7 +162,7 @@ class Cart(models.Model):
 
 # define Order
 class Order(models.Model):
-    ORDER_STATUS = (('0', '配送中'), ('1', '尚未配送'), ('2', '已送達'))
+    ORDER_STATUS = (('0', '配送中'), ('1', '尚未配送'), ('2', '已送達'), ('3', '訂單不成立'))
     id = models.UUIDField(primary_key=True, default=uuid.uuid4)
     transaction = models.OneToOneField(
         Transaction, on_delete=models.SET_NULL, null=True)
