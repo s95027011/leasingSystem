@@ -36,7 +36,7 @@ router.register(r'transaction', views.TransactionViewSet)
 router.register(r'member', views.MemberViewSet)
 router.register(r'cart', views.CartViewSet)
 router.register(r'order', views.OrderViewSet)
-router.register(r'duerecord', views.DuerecordViewSet)
+router.register(r'returnRecord', views.ReturnRecordViewSet)
 
 urlpatterns = [
     path('', home_page),

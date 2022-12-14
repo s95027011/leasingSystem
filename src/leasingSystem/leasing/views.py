@@ -2,8 +2,8 @@ from django.shortcuts import render, get_object_or_404
 from rest_framework.decorators import action
 from rest_framework import viewsets, status, mixins
 from rest_framework.response import Response
-from leasing.models import Type, Product, Item, Transaction, Member, Cart, Order, Duerecord
-from leasing.serializers import TypeSerializer, ProductSerializer, ItemSerializer, TransactionSerializer, MemberSerializer, CartSerializer, OrderSerializer, DuerecordSerializer
+from leasing.models import Type, Product, Item, Transaction, Member, Cart, Order, ReturnRecord
+from leasing.serializers import TypeSerializer, ProductSerializer, ItemSerializer, TransactionSerializer, MemberSerializer, CartSerializer, OrderSerializer, ReturnRecordSerializer
 from rest_framework import generics, permissions
 from knox.models import AuthToken
 from .serializers import UserSerializer, RegisterSerializer
@@ -86,7 +86,7 @@ class ItemViewSet(mixins.CreateModelMixin,
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     # 僅能更新商品狀態
-    def patch(self, request, pk=None):
+    def partial_update(self, request, pk=None):
         model = get_object_or_404(Item, pk=pk)
         data = {'item_status': request.data['item_status']}
         serializer = ItemSerializer(model, data=data, partial=True)
@@ -151,9 +151,23 @@ class CartViewSet(mixins.CreateModelMixin,
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-class OrderViewSet(viewsets.ModelViewSet):
+class OrderViewSet( mixins.ListModelMixin,
+                    mixins.RetrieveModelMixin,
+                    mixins.DestroyModelMixin,
+                    viewsets.GenericViewSet):
     queryset = Order.objects.all()
     serializer_class = OrderSerializer
+
+    def partial_update(self, request, pk=None):
+        model = get_object_or_404(Order, pk=pk)
+        order_status = request.data['order_status']
+        data = {'order_stauts' : order_status}
+        serializer = OrderSerializer(model, data=data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        # return a meaningful error response
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     @action(detail=False, methods=['post'])
     def list_order_by_member(self, request):
@@ -183,6 +197,6 @@ class OrderViewSet(viewsets.ModelViewSet):
         pass
 
 
-class DuerecordViewSet(viewsets.ModelViewSet):
-    queryset = Duerecord.objects.all()
-    serializer_class = DuerecordSerializer
+class ReturnRecordViewSet(viewsets.ModelViewSet):
+    queryset = ReturnRecord.objects.all()
+    serializer_class = ReturnRecordSerializer

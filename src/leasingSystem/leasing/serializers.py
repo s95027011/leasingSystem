@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from leasing.models import Type, Product, Item, Transaction, Member, Cart, Order, Duerecord, User
+from leasing.models import Type, Product, Item, Transaction, Member, Cart, Order, ReturnRecord, User
 from django.contrib.auth.models import User
 
 
@@ -65,6 +65,11 @@ class OrderSerializer(serializers.ModelSerializer):
         model = Order
         fields = '__all__'
 
+class ReturnRecordSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ReturnRecord
+        fields = '__all__'
+        
 # class OrderViewSerializer(serializers.Serializer):
 #     PRODUCT_SIZE = (
 #         ('S', 'small'),
@@ -85,8 +90,4 @@ class OrderSerializer(serializers.ModelSerializer):
 #     class Meta:
 #         model = Order
 #         fields = ('product_name', 'product_size', 'product_price', 'product_image', 'rent_time', 'return_time', 'count')
-class DuerecordSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Duerecord
-        fields = '__all__'
 
