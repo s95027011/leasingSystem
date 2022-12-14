@@ -31,6 +31,8 @@ class Product(models.Model):
     product_type = models.ManyToManyField(Type, help_text='服裝類型')  # 多對多?
     product_price = models.PositiveIntegerField()
     product_fine = models.PositiveIntegerField()
+    product_image = models.CharField(max_length=255, help_text='圖片路徑', default='')
+    product_description = models.TextField(help_text='產品描述' ,blank=True, null=True)
 
     def __str__(self):
         return self.product_name
