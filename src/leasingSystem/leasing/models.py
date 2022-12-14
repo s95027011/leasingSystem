@@ -130,7 +130,7 @@ class Order(models.Model):
         'Member', on_delete=models.SET_NULL, null=True)
     item = models.ManyToManyField(Item)
     order_time = models.DateTimeField(auto_now_add=timezone.now)
-    rent_time = models.DateTimeField(auto_now_add=timezone.now)
+    rent_time = models.DateTimeField()
     order_status = models.CharField(
         choices=ORDER_STATUS, max_length=1, help_text='商品狀態')
     # order_price = models.PositiveIntegerField()
