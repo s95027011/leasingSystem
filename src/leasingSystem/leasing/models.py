@@ -151,8 +151,8 @@ class Member(models.Model):
 
 class Cart(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4)
-    member = models.OneToOneField(
-        Member, on_delete=models.CASCADE, default=None)
+    member = models.ForeignKey(
+        'Member', on_delete=models.CASCADE, default=None)
     # product = models.ManyToManyField(Product)
     product = models.ForeignKey(
         'Product', on_delete=models.CASCADE, null=True)

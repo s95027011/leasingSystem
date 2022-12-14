@@ -1,4 +1,5 @@
 from django.shortcuts import render, get_object_or_404
+from django.http import Http404
 from rest_framework.decorators import action
 from rest_framework import viewsets, status, mixins
 from rest_framework.response import Response
@@ -112,18 +113,28 @@ class MemberViewSet(viewsets.ModelViewSet):
     serializer_class = MemberSerializer
 
 
-class CartViewSet(mixins.CreateModelMixin,
-                  mixins.RetrieveModelMixin,
-                  mixins.DestroyModelMixin,
-                  viewsets.GenericViewSet):
+class CartViewSet(  mixins.CreateModelMixin,
+                    mixins.ListModelMixin,
+                    mixins.RetrieveModelMixin,
+                    mixins.DestroyModelMixin,
+                    viewsets.GenericViewSet):
     queryset = Cart.objects.all()
     serializer_class = CartSerializer
+    def perform_create(self, serializer):
+        product = serializer.validated_data['product']
+        input_count = serializer.validated_data['product_count']
+        item_count = Item.objects.filter(product_id=product).count()
 
-    def list(self, request):
-        member_id = request.query_params.get('member_id', None)
-        query = Cart.objects.all().filter(member_id__in=member_id)
-        serializer = CartSerializer(query, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        if input_count<1 or input_count>item_count:
+            raise Http404
+        return super().perform_create(serializer)
+
+
+    # def list(self, request):
+    #     member_id = request.query_params.get('member_id', None)
+    #     query = Cart.objects.all().filter(member_id__in=member_id)
+    #     serializer = CartSerializer(query, many=True)
+    #     return Response(serializer.data, status=status.HTTP_200_OK)
 
     def update(self, request, pk=None):
         count = request.data['product_count']
