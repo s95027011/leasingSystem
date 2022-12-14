@@ -5,15 +5,21 @@ import uuid
 
 from django.contrib.auth.models import User
 from phonenumber_field.modelfields import PhoneNumberField
+
 # Create your models here.
 
 # define Product type
+
+
 class Type(models.Model):
     name = models.CharField(max_length=20, unique=True)
+
     def __str__(self):
         return self.name
 
 # define Product
+
+
 class Product(models.Model):
     # # 商品規格
     # PRODUCT_SIZE = (
@@ -31,21 +37,25 @@ class Product(models.Model):
     product_type = models.ManyToManyField(Type, help_text='服裝類型')  # 多對多?
     product_price = models.PositiveIntegerField()
     product_fine = models.PositiveIntegerField()
-    product_image = models.CharField(max_length=255, help_text='圖片路徑', default='')
-    product_description = models.TextField(help_text='產品描述' ,blank=True, null=True)
+    product_image = models.CharField(
+        max_length=255, help_text='圖片路徑', default='')
+    product_description = models.TextField(
+        help_text='產品描述', blank=True, null=True)
 
     def __str__(self):
         return self.product_name
 
 # define Item
+
+
 class Item(models.Model):
     ITEM_STATUS = (
         ('0', '上架'),   # update
         ('1', '已出租'),
-        ('2', '未上架'),   # create  
-        ('3', '下架'), # delete
+        ('2', '未上架'),   # create
+        ('3', '下架'),  # delete
     )
-     # 商品規格
+    # 商品規格
     ITEM_SIZE = (
         ('S', 'small'),
         ('M', 'medium'),
@@ -54,7 +64,7 @@ class Item(models.Model):
     )
     id = models.UUIDField(primary_key=True, default=uuid.uuid4)
     product = models.ForeignKey(
-        'Product', on_delete=models.CASCADE, null=True)
+        'Product', on_delete=models.SET_NULL, null=True)
     item_status = models.CharField(
         max_length=1,
         choices=ITEM_STATUS,
@@ -71,6 +81,8 @@ class Item(models.Model):
         return self.product.__str__() + ' (' + str(self.id) + ')'
 
 # define transaction table
+
+
 class Transaction(models.Model):
     # 交易方式
     PAYMENT_METHOD = (
@@ -109,27 +121,38 @@ class Transaction(models.Model):
         return str(self.id)
 
 # define Member
+
+
 class Member(models.Model):
     SEX = (('0', '女性'), ('1', '男性'), ('2', '不選擇'))
     # id = models.UUIDField(primary_key=True, default=uuid.uuid4)
-    user = models.OneToOneField(User, on_delete=models.CASCADE, default='')
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
     #member_name = models.CharField(blank=False, max_length=20)
     member_sex = models.CharField(choices=SEX, max_length=1, help_text='輸入性別')
     member_addr = models.CharField(blank=False, max_length=50)
     #member_email = models.EmailField(max_length=254)
     member_birth = models.DateField(blank=True)
-    #member_phone = PhoneNumberField(blank=False)
+    member_phone = models.CharField(blank=False, max_length=10)
 
-    
+    def __str__(self):
+        return self.user.username
+
     # member_register_date = models.DateField(auto_now_add=timezone.now)
-   # member_login = models.DateField(auto_now_add=timezone.now)  # 現在登入時間
-   # member_pwd = models.CharField(max_length=20)
+    # member_login = models.DateField(auto_now_add=timezone.now)  # 現在登入時間
+    # member_pwd = models.CharField(max_length=20)
     # Password in django https://stackoverflow.com/questions/17523263/how-to-create-password-field-in-model-django
 
+
+# user profile
+
+
 # define Cart
+
+
 class Cart(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4)
-    member = models.OneToOneField(Member, on_delete=models.CASCADE, default=None)
+    member = models.OneToOneField(
+        Member, on_delete=models.CASCADE, default=None)
     # product = models.ManyToManyField(Product)
     product = models.ForeignKey(
         'Product', on_delete=models.CASCADE, null=True)
@@ -140,7 +163,8 @@ class Cart(models.Model):
 class Order(models.Model):
     ORDER_STATUS = (('0', '配送中'), ('1', '尚未配送'), ('2', '已送達'))
     id = models.UUIDField(primary_key=True, default=uuid.uuid4)
-    transaction = models.OneToOneField(Transaction, on_delete=models.SET_NULL, null=True)
+    transaction = models.OneToOneField(
+        Transaction, on_delete=models.SET_NULL, null=True)
     member = models.ForeignKey(
         'Member', on_delete=models.CASCADE, null=True)
     item = models.ManyToManyField(Item)
@@ -158,5 +182,3 @@ class ReturnRecord(models.Model):
     order = models.ForeignKey(Order, on_delete=models.CASCADE)
     due_date = models.DateTimeField(auto_now=True)
     is_due = models.BooleanField(default=0)
-
-

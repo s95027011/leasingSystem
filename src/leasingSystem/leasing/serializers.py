@@ -1,6 +1,8 @@
 from rest_framework import serializers
 from leasing.models import Type, Product, Item, Transaction, Member, Cart, Order, ReturnRecord, User
 from django.contrib.auth.models import User
+from rest_framework.validators import UniqueValidator
+from django.contrib.auth.password_validation import validate_password
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -12,14 +14,50 @@ class UserSerializer(serializers.ModelSerializer):
 
 
 class RegisterSerializer(serializers.ModelSerializer):
+    username = serializers.CharField(
+        required=True,
+        validators=[UniqueValidator(queryset=User.objects.all())],
+    )
+
+    password = serializers.CharField(write_only=True, required=True, validators=[validate_password],
+                                     style={'input_type': 'password'})
+    password2 = serializers.CharField(write_only=True, required=True, style={
+                                      'input_type': 'password'})
+    email = serializers.EmailField(write_only=True, required=True)
+    phone = serializers.CharField(min_length=8, max_length=10, write_only=True)
+    sex = serializers.CharField(max_length=1)
+    birth = serializers.DateField()
+    addr = serializers.CharField(max_length=100)
+
     class Meta:
         model = User
-        fields = ('id', 'username', 'email', 'password')
-        extra_kwargs = {'password': {'write_only': True}}
+        fields = ('username', 'email', 'password',
+                  'password2', 'phone', 'sex', 'birth', 'addr')
+
+    def validate(self, attrs):
+        if attrs['password'] != attrs['password2']:
+            raise serializers.ValidationError(
+                {"password": "Password fields didn't match."})
+
+        return attrs
 
     def create(self, validated_data):
-        user = User.objects.create_user(
-            validated_data['username'], validated_data['email'], validated_data['password'])
+        user = User.objects.create(
+            username=validated_data['username'],
+            email=validated_data['email'],
+            password=validated_data['password'],
+        )
+
+        userprofile = Member.objects.create(
+            user=user,
+            member_phone=validated_data['phone'],
+            member_sex=validated_data['sex'],
+            member_birth=validated_data['birth'],
+            member_addr=validated_data['addr'],
+        )
+
+        user.set_password(validated_data['password'])
+        user.save()
 
         return user
 
@@ -49,6 +87,8 @@ class TransactionSerializer(serializers.ModelSerializer):
 
 
 class MemberSerializer(serializers.ModelSerializer):
+    user = UserSerializer()  # 唯讀
+
     class Meta:
         model = Member
         fields = '__all__'
@@ -65,11 +105,12 @@ class OrderSerializer(serializers.ModelSerializer):
         model = Order
         fields = '__all__'
 
+
 class ReturnRecordSerializer(serializers.ModelSerializer):
     class Meta:
         model = ReturnRecord
         fields = '__all__'
-        
+
 # class OrderViewSerializer(serializers.Serializer):
 #     PRODUCT_SIZE = (
 #         ('S', 'small'),
@@ -85,9 +126,8 @@ class ReturnRecordSerializer(serializers.ModelSerializer):
 #         default='m',
 #         help_text='服裝尺碼'
 #     )
-    
+
 
 #     class Meta:
 #         model = Order
 #         fields = ('product_name', 'product_size', 'product_price', 'product_image', 'rent_time', 'return_time', 'count')
-
