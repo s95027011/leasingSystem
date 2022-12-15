@@ -44,6 +44,13 @@ class RegisterAPI(generics.GenericAPIView):
             "token": AuthToken.objects.create(user)[1]
         })
 
+
+class UserAPI(generics.RetrieveAPIView):
+    permission_classes = [permissions.IsAuthenticated, ]
+    serializer_class = UserSerializer
+
+    def get_object(self):
+        return self.request.user
 ################################################################
 ################################################################
 
@@ -51,6 +58,7 @@ class RegisterAPI(generics.GenericAPIView):
 class TypeViewSet(viewsets.ModelViewSet):
     queryset = Type.objects.all()
     serializer_class = TypeSerializer
+
 
 class ProductViewSet(viewsets.ModelViewSet):
     queryset = Product.objects.all()
@@ -112,28 +120,29 @@ class MemberViewSet(viewsets.ModelViewSet):
     serializer_class = MemberSerializer
 
 
-class CartViewSet(  mixins.CreateModelMixin,
-                    mixins.RetrieveModelMixin,
-                    mixins.DestroyModelMixin,
-                    viewsets.GenericViewSet):
+class CartViewSet(mixins.CreateModelMixin,
+                  mixins.RetrieveModelMixin,
+                  mixins.DestroyModelMixin,
+                  viewsets.GenericViewSet):
     queryset = Cart.objects.all()
     serializer_class = CartSerializer
+
     def perform_create(self, serializer):
         product = serializer.validated_data['product']
         input_count = serializer.validated_data['product_count']
         item_count = Item().get_available_product_count(product_id=product)
 
-        if input_count<1 or input_count>item_count:
+        if input_count < 1 or input_count > item_count:
             raise Http404
         return super().perform_create(serializer)
-    
+
     @action(detail=False, methods=['post'])
     def list_cart_by_member(self, request):
         member_id = request.data['member_id']
         query = Cart.objects.all().filter(member_id__in=member_id)
         serializer = CartSerializer(query, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
-    
+
     def patch(self, request, pk=None):
         count = int(request.data['product_count'])
         product = request.data['product']
@@ -155,19 +164,18 @@ class CartViewSet(  mixins.CreateModelMixin,
         member_id = request.data['member_id']
         Cart.objects.all().filter(member_id__in=member_id).delete()
         return Response('sucess', status=status.HTTP_200_OK)
-        
 
 
-class OrderViewSet( mixins.CreateModelMixin,
-                    mixins.ListModelMixin,
-                    mixins.RetrieveModelMixin,
-                    mixins.DestroyModelMixin,
-                    viewsets.GenericViewSet):
+class OrderViewSet(mixins.CreateModelMixin,
+                   mixins.ListModelMixin,
+                   mixins.RetrieveModelMixin,
+                   mixins.DestroyModelMixin,
+                   viewsets.GenericViewSet):
     queryset = Order.objects.all()
     serializer_class = OrderSerializer
 
     def perform_create(self, serializer):
-        
+
         member = serializer.validated_data['member']
         transaction = serializer.validated_data['transaction']
         item_list = serializer.data['item']
@@ -182,14 +190,13 @@ class OrderViewSet( mixins.CreateModelMixin,
         # print(order_status)
         # print(rent_time)
 
-
         pass
         # return super().perform_create(serializer)
 
     def patch(self, request, pk=None):
         model = get_object_or_404(Order, pk=pk)
         order_status = request.data['order_status']
-        data = {'order_stauts' : order_status}
+        data = {'order_stauts': order_status}
         serializer = OrderSerializer(model, data=data, partial=True)
         if serializer.is_valid():
             serializer.save()
@@ -208,7 +215,7 @@ class OrderViewSet( mixins.CreateModelMixin,
     def list_order_overview(self, request):
         order_id = request.data['order_id']
         query = Order.objects.raw(
-        '''
+            '''
             select product_name, product_size, product_price, product_image, rent_time, return_time, SUM(product_id) as count
             from leasing_order as o
             left join leasing_order_item as order_item
@@ -219,9 +226,8 @@ class OrderViewSet( mixins.CreateModelMixin,
                 on item.product_id = product.id
             where o.id = %
             group by product_name, product_size, product_price, product_image, rent_time, return_time;
-        '''
-        , [order_id])
-        
+        ''', [order_id])
+
         pass
 
 

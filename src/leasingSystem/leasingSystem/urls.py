@@ -18,11 +18,8 @@ from django.urls import path, re_path, include
 from .view import home_page  # view的class
 from rest_framework.routers import DefaultRouter
 from leasing import views
-from leasing.views import RegisterAPI
-from django.urls import path
+from leasing.views import RegisterAPI, LoginAPI, UserAPI
 from knox import views as knox_views
-from leasing.views import LoginAPI
-from django.urls import path
 
 
 urlpatterns = [
@@ -44,6 +41,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/register/', RegisterAPI.as_view(), name='register'),
     path('api/login/', LoginAPI.as_view(), name='login'),
+    path('api/user/', UserAPI.as_view()),
     path('api/logout/', knox_views.LogoutView.as_view(), name='logout'),
     path('api/logoutall/', knox_views.LogoutAllView.as_view(), name='logoutall'),
     re_path(r'^api/', include(router.urls))
