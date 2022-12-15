@@ -4,7 +4,8 @@ from rest_framework.decorators import action
 from rest_framework import viewsets, status, mixins
 from rest_framework.response import Response
 from leasing.models import Type, Product, Item, Transaction, Member, Cart, Order, ReturnRecord
-from leasing.serializers import TypeSerializer, ProductSerializer, ItemSerializer, TransactionSerializer, MemberSerializer, CartSerializer, OrderSerializer, ReturnRecordSerializer
+from leasing.serializers import TypeSerializer, ProductSerializer, ItemSerializer, TransactionSerializer, \
+    MemberSerializer, CartSerializer, OrderSerializer, ReturnRecordSerializer
 from rest_framework import generics, permissions
 from knox.models import AuthToken
 from .serializers import UserSerializer, RegisterSerializer
@@ -12,6 +13,7 @@ from django.contrib.auth import login
 from rest_framework import permissions
 from rest_framework.authtoken.serializers import AuthTokenSerializer
 from knox.views import LoginView as KnoxLoginView
+
 
 # Create your views here.
 ################################################################
@@ -29,6 +31,7 @@ class LoginAPI(KnoxLoginView):
         login(request, user)
         return super(LoginAPI, self).post(request, format=None)
 
+
 # register api
 
 
@@ -44,6 +47,7 @@ class RegisterAPI(generics.GenericAPIView):
             "token": AuthToken.objects.create(user)[1]
         })
 
+
 ################################################################
 ################################################################
 
@@ -51,6 +55,7 @@ class RegisterAPI(generics.GenericAPIView):
 class TypeViewSet(viewsets.ModelViewSet):
     queryset = Type.objects.all()
     serializer_class = TypeSerializer
+
 
 class ProductViewSet(viewsets.ModelViewSet):
     queryset = Product.objects.all()
@@ -112,28 +117,29 @@ class MemberViewSet(viewsets.ModelViewSet):
     serializer_class = MemberSerializer
 
 
-class CartViewSet(  mixins.CreateModelMixin,
-                    mixins.RetrieveModelMixin,
-                    mixins.DestroyModelMixin,
-                    viewsets.GenericViewSet):
+class CartViewSet(mixins.CreateModelMixin,
+                  mixins.RetrieveModelMixin,
+                  mixins.DestroyModelMixin,
+                  viewsets.GenericViewSet):
     queryset = Cart.objects.all()
     serializer_class = CartSerializer
+
     def perform_create(self, serializer):
         product = serializer.validated_data['product']
         input_count = serializer.validated_data['product_count']
         item_count = Item().get_available_product_count(product_id=product)
 
-        if input_count<1 or input_count>item_count:
+        if input_count < 1 or input_count > item_count:
             raise Http404
         return super().perform_create(serializer)
-    
+
     @action(detail=False, methods=['post'])
     def list_cart_by_member(self, request):
         member_id = request.data['member_id']
         query = Cart.objects.all().filter(member_id__in=member_id)
         serializer = CartSerializer(query, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
-    
+
     def patch(self, request, pk=None):
         count = int(request.data['product_count'])
         product = request.data['product']
@@ -155,20 +161,19 @@ class CartViewSet(  mixins.CreateModelMixin,
         member_id = request.data['member_id']
         Cart.objects.all().filter(member_id__in=member_id).delete()
         return Response('sucess', status=status.HTTP_200_OK)
-        
 
 
-class OrderViewSet( mixins.ListModelMixin,
-                    mixins.RetrieveModelMixin,
-                    mixins.DestroyModelMixin,
-                    viewsets.GenericViewSet):
+class OrderViewSet(mixins.ListModelMixin,
+                   mixins.RetrieveModelMixin,
+                   mixins.DestroyModelMixin,
+                   viewsets.GenericViewSet):
     queryset = Order.objects.all()
     serializer_class = OrderSerializer
 
     def patch(self, request, pk=None):
         model = get_object_or_404(Order, pk=pk)
         order_status = request.data['order_status']
-        data = {'order_stauts' : order_status}
+        data = {'order_stauts': order_status}
         serializer = OrderSerializer(model, data=data, partial=True)
         if serializer.is_valid():
             serializer.save()
@@ -187,7 +192,7 @@ class OrderViewSet( mixins.ListModelMixin,
     def list_order_overview(self, request):
         order_id = request.data['order_id']
         query = Order.objects.raw(
-        '''
+            '''
             select product_name, product_size, product_price, product_image, rent_time, return_time, SUM(product_id) as count
             from leasing_order as o
             left join leasing_order_item as order_item
@@ -199,11 +204,11 @@ class OrderViewSet( mixins.ListModelMixin,
             where o.id = %
             group by product_name, product_size, product_price, product_image, rent_time, return_time;
         '''
-        , [order_id])
-        
+            , [order_id])
+
         pass
 
 
 class ReturnRecordViewSet(viewsets.ModelViewSet):
-    queryset = ReturnRecord.objects.all()
+    queryset = ReturnRecord.objects.all()  #
     serializer_class = ReturnRecordSerializer
