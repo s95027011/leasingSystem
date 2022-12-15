@@ -13,6 +13,8 @@ from django.contrib.auth import login
 from rest_framework import permissions
 from rest_framework.authtoken.serializers import AuthTokenSerializer
 from knox.views import LoginView as KnoxLoginView
+from datetime import datetime, timedelta
+import uuid
 
 
 # Create your views here.
@@ -48,6 +50,12 @@ class RegisterAPI(generics.GenericAPIView):
         })
 
 
+class UserAPI(generics.RetrieveAPIView):
+    permission_classes = [permissions.IsAuthenticated, ]
+    serializer_class = UserSerializer
+
+    def get_object(self):
+        return self.request.user
 ################################################################
 ################################################################
 
@@ -163,12 +171,46 @@ class CartViewSet(mixins.CreateModelMixin,
         return Response('sucess', status=status.HTTP_200_OK)
 
 
+<<<<<<< HEAD
 class OrderViewSet(mixins.ListModelMixin,
+=======
+class OrderViewSet(mixins.CreateModelMixin,
+                   mixins.ListModelMixin,
                    mixins.RetrieveModelMixin,
                    mixins.DestroyModelMixin,
                    viewsets.GenericViewSet):
     queryset = Order.objects.all()
     serializer_class = OrderSerializer
+
+    def perform_create(self, serializer):        
+        item_list = serializer.validated_data['item']
+        rent_datetime = serializer.validated_data['rent_datetime']
+
+        valid_item_list = []
+        invalid_item_list = []
+
+        # 檢查item狀態，如果可以出租，更改其狀態
+        for item in item_list:
+            if item.get_item_status() != '0':
+                invalid_item_list.append(item)
+            else:
+                valid_item_list.append(item)
+        
+        print(invalid_item_list)
+        if invalid_item_list:
+            message = ''
+            for invalid_item in invalid_item_list:
+                message += invalid_item.__str__()  + '\n'
+            message += '沒庫存' 
+            return Response(message)       
+        for valid_item in valid_item_list:
+            valid_item.set_item_stauts(1)
+        now = datetime.now().replace(second=0, microsecond=0)
+        rent_datetime_notz = rent_datetime.replace(tzinfo=None)
+        if rent_datetime_notz < now and rent_datetime_notz > (now + timedelta(days=13)):
+            return Response('出租時間不符合規定')
+        return super().perform_create(serializer)
+
 
     def patch(self, request, pk=None):
         model = get_object_or_404(Order, pk=pk)
@@ -203,8 +245,7 @@ class OrderViewSet(mixins.ListModelMixin,
                 on item.product_id = product.id
             where o.id = %
             group by product_name, product_size, product_price, product_image, rent_time, return_time;
-        '''
-            , [order_id])
+        ''', [order_id])
 
         pass
 
