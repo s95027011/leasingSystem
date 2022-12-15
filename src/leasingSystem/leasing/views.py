@@ -158,12 +158,33 @@ class CartViewSet(  mixins.CreateModelMixin,
         
 
 
-class OrderViewSet( mixins.ListModelMixin,
+class OrderViewSet( mixins.CreateModelMixin,
+                    mixins.ListModelMixin,
                     mixins.RetrieveModelMixin,
                     mixins.DestroyModelMixin,
                     viewsets.GenericViewSet):
     queryset = Order.objects.all()
     serializer_class = OrderSerializer
+
+    def perform_create(self, serializer):
+        
+        member = serializer.validated_data['member']
+        transaction = serializer.validated_data['transaction']
+        item_list = serializer.data['item']
+        order_status = serializer.validated_data['order_status']
+        rent_time = serializer.validated_data['rent_time']
+        item_available_list = []
+        # 檢查item狀態，如果可以出租，更改其狀態
+
+        # print(member)
+        # print(transaction)
+        # print(item_list[0])
+        # print(order_status)
+        # print(rent_time)
+
+
+        pass
+        # return super().perform_create(serializer)
 
     def patch(self, request, pk=None):
         model = get_object_or_404(Order, pk=pk)

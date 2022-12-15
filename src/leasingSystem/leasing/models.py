@@ -83,6 +83,13 @@ class Item(models.Model):
     def get_available_product_count(self, product_id):
         return Item.objects.filter(product_id=product_id).filter(item_status='0').count()
 
+    def get_item_status(self):
+        return self.item_status
+
+    def set_item_stauts(self, status):
+        self.item_status = status
+        self.save()
+
 # define transaction table
 
 
@@ -172,14 +179,12 @@ class Order(models.Model):
     order_time = models.DateTimeField(auto_now_add=timezone.now)
     rent_time = models.DateTimeField()
     order_status = models.CharField(
-        choices=ORDER_STATUS, max_length=1, help_text='商品狀態')
-    # order_price = models.PositiveIntegerField()
-    return_time = models.DateTimeField()
+        choices=ORDER_STATUS, max_length=1, help_text='商品狀態', default='1')
 
 
 # define DueRecord
 class ReturnRecord(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4)
     order = models.ForeignKey(Order, on_delete=models.CASCADE)
-    due_date = models.DateTimeField(auto_now=True)
+    return_date = models.DateTimeField(auto_now=True)
     is_due = models.BooleanField(default=0)
