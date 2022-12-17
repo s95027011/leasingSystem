@@ -188,9 +188,9 @@ class Order(models.Model):
     rent_datetime = models.DateField()
     order_status = models.CharField(
         choices=ORDER_STATUS, max_length=1, help_text='商品狀態', default='1')
-    
-    def get_available_member_id(self, order_id):
-        return Order.objects.filter(id=order_id).values('member')
+
+    #def get_renting_date(self, order):
+    #   return Order.objects.filter(id=order).values('rent_datetime')
 
     def __str__(self):
         return str(self.id)

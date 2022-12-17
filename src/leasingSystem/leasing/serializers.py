@@ -138,10 +138,12 @@ class OrderProductSerializer(serializers.ModelSerializer):
 
 
 class ReturnRecordSerializer(serializers.ModelSerializer):
-  #  order = OrderSerializer(many=True)
+    
     class Meta:
         model = ReturnRecord
         fields = '__all__'
+        
+        
 
 # class OrderViewSerializer(serializers.Serializer):
 #     PRODUCT_SIZE = (
