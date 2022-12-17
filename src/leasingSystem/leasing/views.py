@@ -14,7 +14,7 @@ from rest_framework import permissions
 from rest_framework.authtoken.serializers import AuthTokenSerializer
 from knox.views import LoginView as KnoxLoginView
 from datetime import datetime, timedelta
-import uuid
+from uuid import UUID 
 import json
 from itertools import chain
 
@@ -203,27 +203,29 @@ class OrderViewSet(mixins.CreateModelMixin,
                 invalid_product_list.append(product)
             else: 
                 item_list = Item.objects.filter(product_id=product.id)[:product_count]
-                valid_item_id_list += [str(item.id) for item in item_list]
-        
-        # data =  {
-        #             'member' : member_id,
-        #             'transaction' : request.data['transaction'],
-        #             'order_status' : request.data['order_status'],
-        #             'rent_datetime' : request.data['rent_datetime'],
-        #             'item' : valid_item_id_list,
-        #         } 
-        # data = json.dumps(data)
+                for item in item_list:
+                    valid_item_id_list.append(str(item.id))
+       
+        data = {
+                'rent_datetime': request.data['rent_datetime'], 
+                'order_status': '0', 
+                'transaction': request.data['transaction'], 
+                'member': 1, 
+                'item' : valid_item_id_list,
+               }
 
-        order_serializer = OrderSerializer
-        order_serializer.data['member'] = member_id
-        order_serializer.data['transaction'] = request.data['transaction']
-        order_serializer.data['order_status'] = request.data['order_status']
-        order_serializer.data['rent_datatime'] = request.data['rent_datetime']
-        order_serializer.data['item'] = valid_item_id_list
-  
-        print(order_serializer.data)
-        # self.perform_create()
-        return Response('test')
+        if invalid_product_list:
+            message = ''
+            for invalid_product in invalid_product_list:
+                message += invalid_product.__str__()  + '\n'
+            message += '沒庫存'
+            return Response(message)
+
+        order_serializer = OrderSerializer(data=data)
+        if order_serializer.is_valid():
+            self.perform_create(order_serializer)
+            return Response('test')
+        return Response('fail')
 
 
     def perform_create(self, serializer):
@@ -252,6 +254,7 @@ class OrderViewSet(mixins.CreateModelMixin,
         if rent_datetime_notz < now and rent_datetime_notz > (now + timedelta(days=13)):
             return Response('出租時間不符合規定')
         return super().perform_create(serializer)
+       
 
     def patch(self, request, pk=None):
         model = get_object_or_404(Order, pk=pk)
