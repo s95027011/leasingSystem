@@ -15,9 +15,8 @@ from rest_framework.authtoken.serializers import AuthTokenSerializer
 from knox.views import LoginView as KnoxLoginView
 from datetime import datetime, timedelta
 import uuid
+import json
 from itertools import chain
-import json
-import json
 
 # Create your views here.
 ################################################################
@@ -35,10 +34,7 @@ class LoginAPI(KnoxLoginView):
         login(request, user)
         return super(LoginAPI, self).post(request, format=None)
 
-
 # register api
-
-
 class RegisterAPI(generics.GenericAPIView):
     serializer_class = RegisterSerializer
 
