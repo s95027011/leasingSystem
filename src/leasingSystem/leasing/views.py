@@ -11,7 +11,7 @@ from django.contrib.auth import login
 from rest_framework.authtoken.serializers import AuthTokenSerializer
 from rest_framework.authentication import BasicAuthentication
 from knox.views import LoginView as KnoxLoginView
-from datetime import datetime, timedelta
+from datetime import date, timedelta
 from itertools import chain
 from rest_framework.decorators import api_view, permission_classes, authentication_classes
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
@@ -214,8 +214,10 @@ class CartViewSet(mixins.CreateModelMixin,
 
     @action(detail=False, methods=['post'])
     def clear_cart(self, request):
+        print(type(request))
         member_id = request.data['member_id']
-        Cart.objects.all().filter(member_id__in=member_id).delete()
+        # Cart.objects.all().filter(member_id__in=member_id).delete()
+        Cart().clear_cart(member_id=member_id)
         return Response('sucess', status=status.HTTP_200_OK)
 
 
@@ -249,19 +251,17 @@ class OrderViewSet(mixins.CreateModelMixin,
             available_product_count = Item().get_available_product_count(product_id=product.id)
             if product_count > available_product_count:
                 invalid_product_list.append(product)
-            else:
-                item_list = Item.objects.filter(product_id=product.id)[
-                    :product_count]
+            else: 
+                item_list = Item.objects.filter(product_id=product.id).filter(item_status='0')[:product_count]
                 for item in item_list:
                     valid_item_id_list.append(str(item.id))
-
         data = {
-            'rent_datetime': request.data['rent_datetime'],
-            'order_status': '0',
-            'transaction': request.data['transaction'],
-            'member': 1,
-            'item': valid_item_id_list,
-        }
+                'rent_datetime': request.data['rent_datetime'], 
+                'order_status': '0', 
+                'transaction': request.data['transaction'], 
+                'member': member_id, 
+                'item' : valid_item_id_list,
+               }
 
         if invalid_product_list:
             message = ''
@@ -273,9 +273,9 @@ class OrderViewSet(mixins.CreateModelMixin,
         order_serializer = OrderSerializer(data=data)
         if order_serializer.is_valid():
             self.perform_create(order_serializer)
-            CartViewSet.clear_cart({'member': member_id})
+            Cart().clear_cart(member_id=member_id)
             return Response('sucess')
-        return Response('fail')
+        # return Response('fail')
 
     def perform_create(self, serializer):
         item_list = serializer.validated_data['item']
@@ -284,26 +284,30 @@ class OrderViewSet(mixins.CreateModelMixin,
         valid_item_list = []
         invalid_item_list = []
 
-        # 檢查item狀態，如果可以出租，更改其狀態
+        
+        #檢查item狀態，如果可以出租，更改其狀態
         for item in item_list:
             if item.get_item_status() != '0':
                 invalid_item_list.append(item)
             else:
                 valid_item_list.append(item)
-
-        print(invalid_item_list)
+        
+        # 沒印出message !!
         if invalid_item_list:
             message = ''
             for invalid_item in invalid_item_list:
                 message += invalid_item.__str__() + '\n'
             message += '沒庫存'
             return Response(message)
+       
         for valid_item in valid_item_list:
             valid_item.set_item_stauts(1)
-        now = datetime.now().replace(second=0, microsecond=0)
-        rent_datetime_notz = rent_datetime.replace(tzinfo=None)
-        if rent_datetime_notz < now and rent_datetime_notz > (now + timedelta(days=13)):
+
+        now = date.today()
+        if rent_datetime < now and rent_datetime > (now + timedelta(days=13)):
             return Response('出租時間不符合規定')
+        
+        
         return super().perform_create(serializer)
 
     def patch(self, request, pk=None):

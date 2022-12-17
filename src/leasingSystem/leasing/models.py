@@ -170,6 +170,9 @@ class Cart(models.Model):
     def get_product_count(self):
         return self.product_count
 
+    def clear_cart(self, member_id):
+        Cart.objects.all().filter(member_id=member_id).delete()
+
 # define Order
 
 
@@ -181,24 +184,20 @@ class Order(models.Model):
     member = models.ForeignKey(
         'Member', on_delete=models.CASCADE, null=True)
     item = models.ManyToManyField(Item)
-    order_time = models.DateTimeField(auto_now_add=timezone.now)
-    rent_time = models.DateTimeField()
+    order_datetime = models.DateField(auto_now_add=timezone.now)
+    rent_datetime = models.DateField()
     order_status = models.CharField(
         choices=ORDER_STATUS, max_length=1, help_text='商品狀態', default='1')
-
+    
     def get_available_member_id(self, order_id):
         return Order.objects.filter(id=order_id).values('member')
 
-    def get_available_member_id(self, order_id):
-        return Order.objects.filter(id=order_id).values('member')
-
-    def get_available_member_id(self, order_id):
-        return Order.objects.filter(id=order_id).values('member')
-
+    def __str__(self):
+        return str(self.id)
 
 # define DueRecord
 class ReturnRecord(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4)
     order = models.ForeignKey(Order, on_delete=models.CASCADE)
-    return_datetime = models.DateTimeField(auto_now=True)
+    return_datetime = models.DateField(auto_now=True)
     is_due = models.BooleanField(default=0)
