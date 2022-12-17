@@ -230,16 +230,21 @@ class OrderViewSet(mixins.CreateModelMixin,
         item_id = request.data['item']
         # order_id = request.data['id']
         # product_id = request.data['product_id']
-        # query_item = Item.objects.all().filter(id=item_id)
+        query_product = Product.objects.all().only('product_id','product_name', 'product_size', 'product_price', 'product_image')
         # query_order = Order.objects.filter(item__in=query_item).select_related('Item').values_list('item','rent_datetime', 'order_datetime')
         # id, item, member, member_id, order_datetime, order_status, rent_datetime, returnrecord, transaction, transaction_id
         query_order = Order.objects.all().select_related('Item').values_list('item', 'order_datetime', 'rent_datetime')
         # query_order = Order.objects.all().filter(order_id__in=order_id)
         # query_order = Order.objects.all().filter(item_id__in=item)
-
-        query_product = Product.objects.all().select_related('Item').values_list('id','product_name', 'product_size', 'product_price', 'product_image')
+        # print('query_order')
+        # print(query_order.query)
+        query_item = Item.objects.filter(id=item_id).values_list('id', 'product_id')
+        query_product = Product.objects.filter(id__in=Item.objects.filter(id=item_id).values_list('product_id')).values_list('id', 'product_name', 'product_size', 'product_price', 'product_image')
+        query_item_product = chain(query_item, query_product)
+        # print('query_product')
+        # print(query_product.query)
         # count_product = Item.objects.annotate(count=Count('product_id')).filter(item__in=query_item)
-        query = chain(query_order, query_product)
+        query = chain(query_order, query_item_product)
         serializer = OrderByProductSerializer(query, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
         # serializer = OrderProductSerializer(query, many=True)
