@@ -17,7 +17,6 @@ from datetime import datetime, timedelta
 import uuid
 from itertools import chain
 import json
-import json
 
 # Create your views here.
 ################################################################
