@@ -1,11 +1,10 @@
 from django.shortcuts import render, get_object_or_404
 from django.http import Http404
 from rest_framework.decorators import action
-from rest_framework import viewsets, status, mixins
+from rest_framework import viewsets, status, mixins, generics, permissions
 from rest_framework.response import Response
 from leasing.models import Type, Product, Item, Transaction, Member, Cart, Order, ReturnRecord
-from leasing.serializers import TypeSerializer, ProductSerializer, ItemSerializer, TransactionSerializer, MemberSerializer, CartSerializer, OrderSerializer, ReturnRecordSerializer
-from rest_framework import generics, permissions
+from leasing.serializers import TypeSerializer, ProductSerializer, ItemSerializer, TransactionSerializer, MemberSerializer, CartSerializer, OrderSerializer, ReturnRecordSerializer, OrderProductSerializer
 from knox.models import AuthToken
 from .serializers import UserSerializer, RegisterSerializer
 from django.contrib.auth import login
@@ -14,7 +13,7 @@ from rest_framework.authtoken.serializers import AuthTokenSerializer
 from knox.views import LoginView as KnoxLoginView
 from datetime import datetime, timedelta
 import uuid
-
+from itertools import chain
 # Create your views here.
 ################################################################
 ################################################################
@@ -65,6 +64,7 @@ class TypeViewSet(viewsets.ModelViewSet):
 class ProductViewSet(viewsets.ModelViewSet):
     queryset = Product.objects.all()
     serializer_class = ProductSerializer
+    # permission_classes = [permissions.IsAuthenticated, ]
 
 
 class ItemViewSet(mixins.CreateModelMixin,
@@ -73,7 +73,7 @@ class ItemViewSet(mixins.CreateModelMixin,
                   viewsets.GenericViewSet):
     queryset = Item.objects.all()
     serializer_class = ItemSerializer
-
+    # permission_classes = [permissions.IsAuthenticated, ]
     @action(detail=False)
     def list_by_product_status(self, request):
         product_id = request.query_params.get('product_id', None)
@@ -226,22 +226,31 @@ class OrderViewSet(mixins.CreateModelMixin,
 
     @action(detail=False, methods=['post'])
     def list_order_overview(self, request):
+        item = request.data['item_id']
         order_id = request.data['order_id']
-        query = Order.objects.raw(
-            '''
-            select product_name, product_size, product_price, product_image, rent_time, return_time, SUM(product_id) as count
-            from leasing_order as o
-            left join leasing_order_item as order_item
-                on o.id = order_item.order_id
-            left join leasing_item as item
-                on order_item.item_id = item.id
-            left join leasing_product as product
-                on item.product_id = product.id
-            where o.id = %
-            group by product_name, product_size, product_price, product_image, rent_time, return_time;
-        ''', [order_id])
+        # query_order = Order.objects.all().filter(order_id__in=order_id)
+        query_order = Order.objects.all().filter(item_id__in=item)
+        query_product = Product.objects.all().filter(item_id__in=item).only('product_name', 'product_size', 'product_price', 'product_image')
+        query = chain(query_order, query_product)
+        serializer = OrderSerializer(query, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+        # serializer = OrderProductSerializer(query, many=True)
 
-        pass
+        # query = Order.objects.raw(
+        #     '''
+        #     select product_name, product_size, product_price, product_image, rent_time, return_time, SUM(product_id) as count
+        #     from leasing_order as o
+        #     left join leasing_order_item as order_item
+        #         on o.id = order_item.order_id
+        #     left join leasing_item as item
+        #         on order_item.item_id = item.id
+        #     left join leasing_product as product
+        #         on item.product_id = product.id
+        #     where o.id = %
+        #     group by product_name, product_size, product_price, product_image, rent_time, return_time;
+        # ''', [order_id])
+
+        # pass
 
 
 class ReturnRecordViewSet(viewsets.ModelViewSet):
