@@ -39,13 +39,13 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     'knox',
-    'corsheaders',# 加加加
+    'corsheaders',  # 加加加
     'phonenumber_field',
     'leasing',
 ]
 
 MIDDLEWARE = [
-    'corsheaders.middleware.CorsMiddleware',# 一定要加第一個
+    'corsheaders.middleware.CorsMiddleware',  # 一定要加第一個
     'django.middleware.common.CommonMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -154,3 +154,5 @@ REST_FRAMEWORK = {
         'knox.auth.TokenAuthentication',
     ]
 }
+
+MEDIA_ROOT = os.path.join(BASE_DIR, '.media').replace("\\", "/")

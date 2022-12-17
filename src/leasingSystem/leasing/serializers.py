@@ -3,6 +3,14 @@ from leasing.models import Type, Product, Item, Transaction, Member, Cart, Order
 from django.contrib.auth.models import User
 from rest_framework.validators import UniqueValidator
 from django.contrib.auth.password_validation import validate_password
+from django.contrib.auth import authenticate
+from django.core.exceptions import ValidationError
+from django.core.validators import MinLengthValidator
+
+
+def only_int(value):
+    if not value.isdigit():
+        raise ValidationError('只能輸入數字')
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -27,7 +35,9 @@ class RegisterSerializer(serializers.ModelSerializer):
     sex = serializers.CharField(max_length=1)
     addr = serializers.CharField(max_length=100)
     birth = serializers.DateField()
-    phone = serializers.CharField(min_length=8, max_length=10, write_only=True)
+    phone = serializers.CharField(
+        validators=[
+            MinLengthValidator(3), only_int], max_length=10, write_only=True)
 
     class Meta:
         model = User
@@ -62,6 +72,17 @@ class RegisterSerializer(serializers.ModelSerializer):
         return user
 
 
+class LoginSerializer(serializers.Serializer):
+    username = serializers.CharField()
+    password = serializers.CharField()
+
+    def validate(self, data):
+        user = authenticate(**data)
+        if user and user.is_active:
+            return user
+        raise serializers.ValidationError('Incorrect Credentials Passed.')
+
+
 class TypeSerializer(serializers.ModelSerializer):
     class Meta:
         model = Type
@@ -88,6 +109,7 @@ class TransactionSerializer(serializers.ModelSerializer):
 
 class MemberSerializer(serializers.ModelSerializer):
     user = UserSerializer()
+
     class Meta:
         model = Member
         fields = '__all__'
@@ -106,11 +128,14 @@ class OrderSerializer(serializers.ModelSerializer):
         model = Order
         fields = '__all__'
 
+
 class OrderProductSerializer(serializers.ModelSerializer):
-    product = ProductSerializer(read_only=True) # 唯讀
+    product = ProductSerializer(read_only=True)  # 唯讀
+
     class Meta:
         model = Order
         fields = '__all__'
+
 
 class ReturnRecordSerializer(serializers.ModelSerializer):
   #  order = OrderSerializer(many=True)

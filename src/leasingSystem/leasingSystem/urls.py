@@ -20,6 +20,10 @@ from rest_framework.routers import DefaultRouter
 from leasing import views
 from leasing.views import RegisterAPI, LoginAPI, UserAPI
 from knox import views as knox_views
+from django.contrib import admin
+from django.conf.urls.static import static  # 需要添加这句，包含静态资源之类的
+from leasing import views
+from . import settings
 
 
 urlpatterns = [
@@ -44,5 +48,6 @@ urlpatterns = [
     path('api/user/', UserAPI.as_view()),
     path('api/logout/', knox_views.LogoutView.as_view(), name='logout'),
     path('api/logoutall/', knox_views.LogoutAllView.as_view(), name='logoutall'),
+    path(r'^api-auth/', include('rest_framework.urls', namespace='rest_framework')),
     re_path(r'^api/', include(router.urls))
 ]

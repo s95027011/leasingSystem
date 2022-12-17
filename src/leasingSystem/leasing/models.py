@@ -10,9 +10,11 @@ from django.core.exceptions import ValidationError
 
 # define Product type
 
+
 def only_int(value):
     if not value.isdigit():
         raise ValidationError('只能輸入數字')
+
 
 class Type(models.Model):
     name = models.CharField(max_length=20, unique=True)
@@ -24,19 +26,19 @@ class Type(models.Model):
 
 
 class Product(models.Model):
-    # 商品規格
-    PRODUCT_SIZE = (
-        ('S', 'small'),
-        ('M', 'medium'),
-        ('L', 'large'),
-        ('XL', 'extra large'),
-    )
+    # # 商品規格
+    # PRODUCT_SIZE = (
+    #     ('S', 'small'),
+    #     ('M', 'medium'),
+    #     ('L', 'large'),
+    #     ('XL', 'extra large'),
+    # )
     product_name = models.CharField(max_length=20)
-    product_size = models.CharField(
-        max_length=2,
-        choices=PRODUCT_SIZE,
-        default='m',
-        help_text='服裝尺碼')
+    # product_size = models.CharField(
+    #     max_length=2,
+    #     choices=PRODUCT_SIZE,
+    #     default='m',
+    #     help_text='服裝尺碼')
     product_type = models.ManyToManyField(Type, help_text='服裝類型')  # 多對多?
     product_price = models.PositiveIntegerField()
     product_fine = models.PositiveIntegerField()
@@ -47,7 +49,7 @@ class Product(models.Model):
 
     def __str__(self):
         return self.product_name
-    
+
 # define Item
 
 
@@ -58,7 +60,13 @@ class Item(models.Model):
         ('2', '未上架'),   # create
         ('3', '下架'),  # delete
     )
-    
+    # 商品規格
+    ITEM_SIZE = (
+        ('S', 'small'),
+        ('M', 'medium'),
+        ('L', 'large'),
+        ('XL', 'extra large'),
+    )
     id = models.UUIDField(primary_key=True, default=uuid.uuid4)
     product = models.ForeignKey(
         'Product', on_delete=models.CASCADE)
@@ -68,18 +76,17 @@ class Item(models.Model):
         default='2',
         help_text='Item 狀態')
 
+    item_size = models.CharField(
+        max_length=2,
+        choices=ITEM_SIZE,
+        default='m',
+        help_text='服裝尺碼')
+
     def __str__(self):
         return self.product.__str__() + ' (' + str(self.id) + ')'
 
     def get_available_product_count(self, product_id):
         return Item.objects.filter(product_id=product_id).filter(item_status='0').count()
-
-    def get_item_status(self):
-        return self.item_status
-
-    def set_item_stauts(self, status):
-        self.item_status = status
-        self.save()
 
 # define transaction table
 
@@ -133,7 +140,7 @@ class Member(models.Model):
     member_addr = models.CharField(blank=False, max_length=50)
     #member_email = models.EmailField(max_length=254)
     member_birth = models.DateField(blank=True)
-    member_phone = models.CharField(blank=False, max_length=10)
+    member_phone = models.CharField(blank=False, max_length=10,)
 
     def __str__(self):
         return self.user.username
@@ -164,6 +171,8 @@ class Cart(models.Model):
         return self.product_count
 
 # define Order
+
+
 class Order(models.Model):
     ORDER_STATUS = (('0', '配送中'), ('1', '尚未配送'), ('2', '已送達'), ('3', '訂單不成立'))
     id = models.UUIDField(primary_key=True, default=uuid.uuid4)
@@ -172,14 +181,21 @@ class Order(models.Model):
     member = models.ForeignKey(
         'Member', on_delete=models.CASCADE, null=True)
     item = models.ManyToManyField(Item)
-    order_datetime = models.DateTimeField(auto_now_add=timezone.now)
-    rent_datetime = models.DateTimeField()
+    order_time = models.DateTimeField(auto_now_add=timezone.now)
+    rent_time = models.DateTimeField()
     order_status = models.CharField(
         choices=ORDER_STATUS, max_length=1, help_text='商品狀態', default='1')
+
     def get_available_member_id(self, order_id):
         return Order.objects.filter(id=order_id).values('member')
 
- 
+    def get_available_member_id(self, order_id):
+        return Order.objects.filter(id=order_id).values('member')
+
+    def get_available_member_id(self, order_id):
+        return Order.objects.filter(id=order_id).values('member')
+
+
 # define DueRecord
 class ReturnRecord(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4)
