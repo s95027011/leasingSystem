@@ -14,8 +14,6 @@ from rest_framework import permissions
 from rest_framework.authtoken.serializers import AuthTokenSerializer
 from knox.views import LoginView as KnoxLoginView
 from datetime import datetime, timedelta
-from uuid import UUID 
-import json
 from itertools import chain
 
 # Create your views here.
@@ -229,6 +227,7 @@ class OrderViewSet(mixins.CreateModelMixin,
 
 
     def perform_create(self, serializer):
+
         item_list = serializer.validated_data['item']
         rent_datetime = serializer.validated_data['rent_datetime']
 

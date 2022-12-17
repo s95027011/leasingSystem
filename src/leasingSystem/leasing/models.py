@@ -4,12 +4,15 @@ from django.utils import timezone
 import uuid
 
 from django.contrib.auth.models import User
-from phonenumber_field.modelfields import PhoneNumberField
+from django.core.exceptions import ValidationError
 
 # Create your models here.
 
 # define Product type
 
+def only_int(value):
+    if not value.isdigit():
+        raise ValidationError('只能輸入數字')
 
 class Type(models.Model):
     name = models.CharField(max_length=20, unique=True)
@@ -105,15 +108,15 @@ class Transaction(models.Model):
     # CardInfo
     # 銀行7碼 (前三碼 銀行, 後四碼 分支機構)
     bank_id = models.CharField(max_length=7, validators=[
-        MinLengthValidator(7)], blank=True, help_text='前三碼 銀行, 後四碼 分支機構')
+        MinLengthValidator(7), only_int], blank=True, help_text='前三碼 銀行, 後四碼 分支機構')
     # Card Type ?
     card_type = models.CharField(choices=CARD_TYPE, max_length=1)
     card_id = models.CharField(max_length=16, validators=[
-        MinLengthValidator(16)], blank=True, help_text='16碼')
+        MinLengthValidator(16), only_int], blank=True, help_text='16碼')
     due_date = models.CharField(max_length=4, validators=[
-        MinLengthValidator(4)], blank=True)
+        MinLengthValidator(4), only_int], blank=True)
     valid_number = models.CharField(max_length=3, validators=[
-        MinLengthValidator(3)], blank=True)
+        MinLengthValidator(3), only_int], blank=True)
 
     def __str__(self):
         return str(self.id)
