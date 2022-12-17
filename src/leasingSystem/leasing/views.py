@@ -1,11 +1,11 @@
 from django.shortcuts import render, get_object_or_404
 from django.http import Http404
 from rest_framework.decorators import action
-from rest_framework import viewsets, status, mixins
+from rest_framework import viewsets, status, mixins, generics, permissions
 from rest_framework.response import Response
 from leasing.models import Type, Product, Item, Transaction, Member, Cart, Order, ReturnRecord
-from leasing.serializers import TypeSerializer, ProductSerializer, ItemSerializer, TransactionSerializer, \
-    MemberSerializer, CartSerializer, OrderSerializer, ReturnRecordSerializer
+from leasing.serializers import TypeSerializer, ProductSerializer, ItemSerializer, TransactionSerializer,MemberSerializer, CartSerializer, OrderSerializer, ReturnRecordSerializer
+from rest_framework import generics, permissions
 from rest_framework import generics, permissions
 from knox.models import AuthToken
 from .serializers import UserSerializer, RegisterSerializer
@@ -15,8 +15,8 @@ from rest_framework.authtoken.serializers import AuthTokenSerializer
 from knox.views import LoginView as KnoxLoginView
 from datetime import datetime, timedelta
 import uuid
-
-
+from itertools import chain
+import json
 # Create your views here.
 ################################################################
 ################################################################
@@ -68,6 +68,7 @@ class TypeViewSet(viewsets.ModelViewSet):
 class ProductViewSet(viewsets.ModelViewSet):
     queryset = Product.objects.all()
     serializer_class = ProductSerializer
+    # permission_classes = [permissions.IsAuthenticated, ]
 
 
 class ItemViewSet(mixins.CreateModelMixin,
@@ -76,7 +77,7 @@ class ItemViewSet(mixins.CreateModelMixin,
                   viewsets.GenericViewSet):
     queryset = Item.objects.all()
     serializer_class = ItemSerializer
-
+    # permission_classes = [permissions.IsAuthenticated, ]
     @action(detail=False)
     def list_by_product_status(self, request):
         product_id = request.query_params.get('product_id', None)
@@ -171,9 +172,7 @@ class CartViewSet(mixins.CreateModelMixin,
         return Response('sucess', status=status.HTTP_200_OK)
 
 
-<<<<<<< HEAD
-class OrderViewSet(mixins.ListModelMixin,
-=======
+
 class OrderViewSet(mixins.CreateModelMixin,
                    mixins.ListModelMixin,
                    mixins.RetrieveModelMixin,
@@ -182,7 +181,7 @@ class OrderViewSet(mixins.CreateModelMixin,
     queryset = Order.objects.all()
     serializer_class = OrderSerializer
 
-    def perform_create(self, serializer):        
+    def perform_create(self, serializer):
         item_list = serializer.validated_data['item']
         rent_datetime = serializer.validated_data['rent_datetime']
 
@@ -201,8 +200,8 @@ class OrderViewSet(mixins.CreateModelMixin,
             message = ''
             for invalid_item in invalid_item_list:
                 message += invalid_item.__str__()  + '\n'
-            message += '沒庫存' 
-            return Response(message)       
+            message += '沒庫存'
+            return Response(message)
         for valid_item in valid_item_list:
             valid_item.set_item_stauts(1)
         now = datetime.now().replace(second=0, microsecond=0)
@@ -232,24 +231,61 @@ class OrderViewSet(mixins.CreateModelMixin,
 
     @action(detail=False, methods=['post'])
     def list_order_overview(self, request):
+        item = request.data['item_id']
         order_id = request.data['order_id']
-        query = Order.objects.raw(
-            '''
-            select product_name, product_size, product_price, product_image, rent_time, return_time, SUM(product_id) as count
-            from leasing_order as o
-            left join leasing_order_item as order_item
-                on o.id = order_item.order_id
-            left join leasing_item as item
-                on order_item.item_id = item.id
-            left join leasing_product as product
-                on item.product_id = product.id
-            where o.id = %
-            group by product_name, product_size, product_price, product_image, rent_time, return_time;
-        ''', [order_id])
+        # query_order = Order.objects.all().filter(order_id__in=order_id)
+        query_order = Order.objects.all().filter(item_id__in=item)
+        query_product = Product.objects.all().filter(item_id__in=item).only('product_name', 'product_size', 'product_price', 'product_image')
+        query = chain(query_order, query_product)
+        serializer = OrderSerializer(query, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+        # serializer = OrderProductSerializer(query, many=True)
 
-        pass
+        # query = Order.objects.raw(
+        #     '''
+        #     select product_name, product_size, product_price, product_image, rent_time, return_time, SUM(product_id) as count
+        #     from leasing_order as o
+        #     left join leasing_order_item as order_item
+        #         on o.id = order_item.order_id
+        #     left join leasing_item as item
+        #         on order_item.item_id = item.id
+        #     left join leasing_product as product
+        #         on item.product_id = product.id
+        #     where o.id = %
+        #     group by product_name, product_size, product_price, product_image, rent_time, return_time;
+        # ''', [order_id])
+
+        # pass
 
 
-class ReturnRecordViewSet(viewsets.ModelViewSet):
-    queryset = ReturnRecord.objects.all()  #
+class ReturnRecordViewSet(mixins.CreateModelMixin,
+                          mixins.ListModelMixin,
+                          mixins.RetrieveModelMixin,
+                          viewsets.GenericViewSet):
+    queryset = ReturnRecord.objects.all()
     serializer_class = ReturnRecordSerializer
+    def perform_create(self, serializer):
+        is_due = serializer.validated_data['is_due']
+    @action(detail=False, methods=['post'])
+    def member_Return_record_by_manager(self, request):
+        order= request.data['order']
+        # member_id = Order().get_available_member_id(order_id=order)
+        # query = ReturnRecord.objects.raw(
+        # 'SELECT leasing_returnrecord.id,leasing_order.member_id,leasing_returnrecord.order_id,leasing_returnrecord.return_datetime,leasing_returnrecord.is_due FROM leasing_returnrecord JOIN leasing_order ON leasing_returnrecord.order_id=leasing_order.id and leasing_order.member_id =(SELECT leasing_order.member_id  FROM leasing_order where leasing_order.id=%s)'
+        # , [order])
+        query = ReturnRecord.objects.raw(
+        'SELECT leasing_returnrecord.id,member_id,leasing_returnrecord.order_id,leasing_returnrecord.return_datetime,leasing_returnrecord.is_due FROM leasing_returnrecord JOIN leasing_order ON leasing_returnrecord.order_id=leasing_order.id '
+        ,)
+        serializer = ReturnRecordSerializer(query, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    @action(detail=False, methods=['post'])
+    def member_Return_record_by_member(self, request):
+        order = request.data['order']
+        query = Order.objects.raw(
+
+        )
+        serializer = OrderSerializer(query, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    @action(detail=False, methods=['post'])
+    def total_fine(self, request):
+        pass
