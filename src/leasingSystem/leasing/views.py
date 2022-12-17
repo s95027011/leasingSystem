@@ -14,6 +14,8 @@ from knox.views import LoginView as KnoxLoginView
 from datetime import datetime, timedelta
 import uuid
 from itertools import chain
+import json
+
 # Create your views here.
 ################################################################
 ################################################################
@@ -176,6 +178,53 @@ class OrderViewSet(mixins.CreateModelMixin,
     queryset = Order.objects.all()
     serializer_class = OrderSerializer
 
+    @action(detail=False, methods=['post'])
+    def create_order_by_cart(self, request):
+        '''
+        param: 
+            transaction,
+            member
+            rent_datetime,
+            order_status,
+
+            從購物車去抓item，不用cart_id
+        '''
+        member_id = request.data['member']
+        cart_product_list = Cart.objects.filter(member_id=member_id)
+        
+        invalid_product_list = []
+        valid_item_id_list = []
+        for cart in cart_product_list:
+            product = cart.get_product()
+            product_count = cart.get_product_count()
+            available_product_count = Item().get_available_product_count(product_id=product.id)
+            if product_count > available_product_count:
+                invalid_product_list.append(product)
+            else: 
+                item_list = Item.objects.filter(product_id=product.id)[:product_count]
+                valid_item_id_list += [str(item.id) for item in item_list]
+        
+        # data =  {
+        #             'member' : member_id,
+        #             'transaction' : request.data['transaction'],
+        #             'order_status' : request.data['order_status'],
+        #             'rent_datetime' : request.data['rent_datetime'],
+        #             'item' : valid_item_id_list,
+        #         } 
+        # data = json.dumps(data)
+
+        order_serializer = OrderSerializer
+        order_serializer.data['member'] = member_id
+        order_serializer.data['transaction'] = request.data['transaction']
+        order_serializer.data['order_status'] = request.data['order_status']
+        order_serializer.data['rent_datatime'] = request.data['rent_datetime']
+        order_serializer.data['item'] = valid_item_id_list
+  
+        print(order_serializer.data)
+        # self.perform_create()
+        return Response('test')
+
+
     def perform_create(self, serializer):        
         item_list = serializer.validated_data['item']
         rent_datetime = serializer.validated_data['rent_datetime']
@@ -189,8 +238,6 @@ class OrderViewSet(mixins.CreateModelMixin,
                 invalid_item_list.append(item)
             else:
                 valid_item_list.append(item)
-        
-        print(invalid_item_list)
         if invalid_item_list:
             message = ''
             for invalid_item in invalid_item_list:
@@ -204,7 +251,6 @@ class OrderViewSet(mixins.CreateModelMixin,
         if rent_datetime_notz < now and rent_datetime_notz > (now + timedelta(days=13)):
             return Response('出租時間不符合規定')
         return super().perform_create(serializer)
-
 
     def patch(self, request, pk=None):
         model = get_object_or_404(Order, pk=pk)

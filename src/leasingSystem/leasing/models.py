@@ -44,7 +44,7 @@ class Product(models.Model):
 
     def __str__(self):
         return self.product_name
-
+    
 # define Item
 
 
@@ -154,6 +154,11 @@ class Cart(models.Model):
         'Product', on_delete=models.CASCADE, null=True)
     product_count = models.PositiveIntegerField()
 
+    def get_product(self):
+        return self.product
+
+    def get_product_count(self):
+        return self.product_count
 
 # define Order
 class Order(models.Model):
@@ -169,7 +174,7 @@ class Order(models.Model):
     order_status = models.CharField(
         choices=ORDER_STATUS, max_length=1, help_text='商品狀態', default='1')
 
-
+ 
 # define DueRecord
 class ReturnRecord(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4)
