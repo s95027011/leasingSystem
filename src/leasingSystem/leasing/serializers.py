@@ -98,19 +98,26 @@ class CartSerializer(serializers.ModelSerializer):
         model = Cart
         fields = '__all__'
 
+class ItemProductSerializer(serializers.ModelSerializer):
+    product = ProductSerializer(many=True) # many=True多對多
+    class Meta:
+        model = Item
+        fields = ('id', 'product_name', 'product_size', 'product_price', 'product_image', 'product')
 
 class OrderSerializer(serializers.ModelSerializer):
-    # product = ProductSerializer(read_only=True)  # 唯讀
-    # product.field_name = ['product_name', 'product_size', 'product_price', 'product_image']
     class Meta:
         model = Order
         fields = '__all__'
 
-class OrderProductSerializer(serializers.ModelSerializer):
-    product = ProductSerializer(read_only=True) # 唯讀
+class OrderByProductSerializer(serializers.ModelSerializer):
+    product = ItemProductSerializer(many=True) # many=True多對多 # read_only=True唯讀
     class Meta:
         model = Order
-        fields = '__all__'
+        fields = ('id', 'order_datetime', 'rent_datetime', 'product')
+        # 'order_datetime', 'rent_datetime'
+        # 'product_name', 'product_size', 'product_price', 'product_image'
+
+
 
 class ReturnRecordSerializer(serializers.ModelSerializer):
     class Meta:
