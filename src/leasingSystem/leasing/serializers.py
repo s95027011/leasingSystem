@@ -145,23 +145,3 @@ class ReturnRecordSerializer(serializers.ModelSerializer):
         
         
 
-# class OrderViewSerializer(serializers.Serializer):
-#     PRODUCT_SIZE = (
-#         ('S', 'small'),
-#         ('M', 'medium'),
-#         ('L', 'large'),
-#         ('XL', 'extra large'),
-#     )
-
-#     product_name = serializers.CharField(max_length=20)
-#     product_size = serializers.CharField(
-#         max_length = 2,
-#         chooices=PRODUCT_SIZE,
-#         default='m',
-#         help_text='服裝尺碼'
-#     )
-
-
-#     class Meta:
-#         model = Order
-#         fields = ('product_name', 'product_size', 'product_price', 'product_image', 'rent_time', 'return_time', 'count')

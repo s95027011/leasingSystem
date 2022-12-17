@@ -392,26 +392,27 @@ class ReturnRecordViewSet(mixins.CreateModelMixin,
         serializer.validated_data['is_due']=is_due
         return super().perform_create(serializer)
            
-    @action(detail=False, methods=['post'])
-    def member_Return_record_by_manager(self, request):
-        order= request.data['order']
-        # member_id = Order().get_available_member_id(order_id=order)
-        # query = ReturnRecord.objects.raw(
-        # 'SELECT leasing_returnrecord.id,leasing_order.member_id,leasing_returnrecord.order_id,leasing_returnrecord.return_datetime,leasing_returnrecord.is_due FROM leasing_returnrecord JOIN leasing_order ON leasing_returnrecord.order_id=leasing_order.id and leasing_order.member_id =(SELECT leasing_order.member_id  FROM leasing_order where leasing_order.id=%s)'
-        # , [order])
-        query = ReturnRecord.objects.raw(
-        'SELECT leasing_returnrecord.id,member_id,leasing_returnrecord.order_id,leasing_returnrecord.return_datetime,leasing_returnrecord.is_due FROM leasing_returnrecord JOIN leasing_order ON leasing_returnrecord.order_id=leasing_order.id '
-        ,)
+    @action(detail=False, methods=['post', 'get'])
+    def list_returnrecord(self, request):
+        query = ReturnRecord.objects.filter(is_due=False)
         serializer = ReturnRecordSerializer(query, many=True)
-        print(serializer.data)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    @action(detail=False, methods=['post', 'get'])
+    def list_duerecord(self, request):
+        query = ReturnRecord.objects.filter(is_due=True)
+        serializer = ReturnRecordSerializer(query, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     @action(detail=False, methods=['post'])
-    def member_Return_record_by_member(self, request):
+    def list_duerecord_by_member_id(self, request):
         order = request.data['order']
-        query = Order.objects.filter(order_id__in = order)
-        serializer = ReturnRecordSerializer(query, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        print(order) 
+        # query = Order.objects.raw(
+
+        # )
+        # serializer = ReturnRecordSerializer(query, many=True)
+        # return Response(serializer.data, status=status.HTTP_200_OK)
 
     @action(detail=False, methods=['post'])
     def total_fine(self, request):
