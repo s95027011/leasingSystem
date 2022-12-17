@@ -106,7 +106,7 @@ class ProductViewSet(viewsets.ModelViewSet):
     serializer_class = ProductSerializer
 
     def get_permissions(self):
-        if self.action in ('create', 'retrieve'):
+        if self.action in ('create',):
             self.permission_classes = [IsAdminUser]
         return [permission() for permission in self.permission_classes]
 # Admin can create product
@@ -171,6 +171,16 @@ class TransactionViewSet(mixins.CreateModelMixin,
 class MemberViewSet(viewsets.ModelViewSet):
     queryset = Member.objects.all()
     serializer_class = MemberSerializer
+
+    def get_permissions(self):
+        if self.action in ('list',):
+            self.permission_classes = [IsAdminUser]
+        return [permission() for permission in self.permission_classes]
+# Admin can view member list
+
+    @permission_classes((IsAdminUser))
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
 
 
 class CartViewSet(mixins.CreateModelMixin,
