@@ -113,6 +113,7 @@ class OrderProductSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class ReturnRecordSerializer(serializers.ModelSerializer):
+  #  order = OrderSerializer(many=True)
     class Meta:
         model = ReturnRecord
         fields = '__all__'

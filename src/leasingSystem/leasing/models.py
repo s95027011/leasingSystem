@@ -173,6 +173,8 @@ class Order(models.Model):
     rent_datetime = models.DateTimeField()
     order_status = models.CharField(
         choices=ORDER_STATUS, max_length=1, help_text='商品狀態', default='1')
+    def get_available_member_id(self, order_id):
+        return Order.objects.filter(id=order_id).values('member')
 
  
 # define DueRecord

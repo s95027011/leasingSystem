@@ -4,7 +4,9 @@ from rest_framework.decorators import action
 from rest_framework import viewsets, status, mixins, generics, permissions
 from rest_framework.response import Response
 from leasing.models import Type, Product, Item, Transaction, Member, Cart, Order, ReturnRecord
-from leasing.serializers import TypeSerializer, ProductSerializer, ItemSerializer, TransactionSerializer, MemberSerializer, CartSerializer, OrderSerializer, ReturnRecordSerializer, OrderProductSerializer
+from leasing.serializers import TypeSerializer, ProductSerializer, ItemSerializer, TransactionSerializer,MemberSerializer, CartSerializer, OrderSerializer, ReturnRecordSerializer
+from rest_framework import generics, permissions
+from rest_framework import generics, permissions
 from knox.models import AuthToken
 from .serializers import UserSerializer, RegisterSerializer
 from django.contrib.auth import login
@@ -14,6 +16,7 @@ from knox.views import LoginView as KnoxLoginView
 from datetime import datetime, timedelta
 import uuid
 from itertools import chain
+import json
 import json
 
 # Create your views here.
@@ -31,6 +34,7 @@ class LoginAPI(KnoxLoginView):
         user = serializer.validated_data['user']
         login(request, user)
         return super(LoginAPI, self).post(request, format=None)
+
 
 # register api
 
@@ -170,6 +174,7 @@ class CartViewSet(mixins.CreateModelMixin,
         return Response('sucess', status=status.HTTP_200_OK)
 
 
+
 class OrderViewSet(mixins.CreateModelMixin,
                    mixins.ListModelMixin,
                    mixins.RetrieveModelMixin,
@@ -225,7 +230,7 @@ class OrderViewSet(mixins.CreateModelMixin,
         return Response('test')
 
 
-    def perform_create(self, serializer):        
+    def perform_create(self, serializer):
         item_list = serializer.validated_data['item']
         rent_datetime = serializer.validated_data['rent_datetime']
 
@@ -242,8 +247,8 @@ class OrderViewSet(mixins.CreateModelMixin,
             message = ''
             for invalid_item in invalid_item_list:
                 message += invalid_item.__str__()  + '\n'
-            message += '沒庫存' 
-            return Response(message)       
+            message += '沒庫存'
+            return Response(message)
         for valid_item in valid_item_list:
             valid_item.set_item_stauts(1)
         now = datetime.now().replace(second=0, microsecond=0)
@@ -299,6 +304,34 @@ class OrderViewSet(mixins.CreateModelMixin,
         # pass
 
 
-class ReturnRecordViewSet(viewsets.ModelViewSet):
+class ReturnRecordViewSet(mixins.CreateModelMixin,
+                          mixins.ListModelMixin,
+                          mixins.RetrieveModelMixin,
+                          viewsets.GenericViewSet):
     queryset = ReturnRecord.objects.all()
     serializer_class = ReturnRecordSerializer
+    def perform_create(self, serializer):
+        is_due = serializer.validated_data['is_due']
+    @action(detail=False, methods=['post'])
+    def member_Return_record_by_manager(self, request):
+        order= request.data['order']
+        # member_id = Order().get_available_member_id(order_id=order)
+        # query = ReturnRecord.objects.raw(
+        # 'SELECT leasing_returnrecord.id,leasing_order.member_id,leasing_returnrecord.order_id,leasing_returnrecord.return_datetime,leasing_returnrecord.is_due FROM leasing_returnrecord JOIN leasing_order ON leasing_returnrecord.order_id=leasing_order.id and leasing_order.member_id =(SELECT leasing_order.member_id  FROM leasing_order where leasing_order.id=%s)'
+        # , [order])
+        query = ReturnRecord.objects.raw(
+        'SELECT leasing_returnrecord.id,member_id,leasing_returnrecord.order_id,leasing_returnrecord.return_datetime,leasing_returnrecord.is_due FROM leasing_returnrecord JOIN leasing_order ON leasing_returnrecord.order_id=leasing_order.id '
+        ,)
+        serializer = ReturnRecordSerializer(query, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    @action(detail=False, methods=['post'])
+    def member_Return_record_by_member(self, request):
+        order = request.data['order']
+        query = Order.objects.raw(
+
+        )
+        serializer = OrderSerializer(query, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    @action(detail=False, methods=['post'])
+    def total_fine(self, request):
+        pass
