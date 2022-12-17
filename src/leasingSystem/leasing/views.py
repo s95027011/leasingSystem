@@ -140,7 +140,7 @@ class CartViewSet(mixins.CreateModelMixin,
 
     @action(detail=False, methods=['post'])
     def list_cart_by_member(self, request):
-        member_id = request.data['member_id']
+        member_id = request.data['member']
         query = Cart.objects.all().filter(member_id__in=member_id)
         serializer = CartSerializer(query, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
@@ -222,7 +222,8 @@ class OrderViewSet(mixins.CreateModelMixin,
         order_serializer = OrderSerializer(data=data)
         if order_serializer.is_valid():
             self.perform_create(order_serializer)
-            return Response('test')
+            CartViewSet.clear_cart({'member':member_id})
+            return Response('sucess')
         return Response('fail')
 
 
