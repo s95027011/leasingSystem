@@ -48,6 +48,6 @@ urlpatterns = [
     path('api/user/', UserAPI.as_view()),
     path('api/logout/', knox_views.LogoutView.as_view(), name='logout'),
     path('api/logoutall/', knox_views.LogoutAllView.as_view(), name='logoutall'),
-    path(r'^api-auth/', include('rest_framework.urls', namespace='rest_framework')),
+    re_path(r'^api-auth/', include('rest_framework.urls', namespace='rest_framework')),
     re_path(r'^api/', include(router.urls))
 ]

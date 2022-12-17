@@ -398,6 +398,14 @@ class ReturnRecordViewSet(mixins.CreateModelMixin,
         serializer = ReturnRecordSerializer(query, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
+    @action(detail=False, methods=['post'])
+    def list_returnrecord_by_member_id(self, request):
+        member_id = request.data['member']
+        query = ReturnRecord.objects.select_related('order').filter(is_due=False).filter(order__member_id=member_id)
+        # print(query.query)
+        serializer = ReturnRecordSerializer(query, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
     @action(detail=False, methods=['post', 'get'])
     def list_duerecord(self, request):
         query = ReturnRecord.objects.filter(is_due=True)
@@ -406,13 +414,11 @@ class ReturnRecordViewSet(mixins.CreateModelMixin,
 
     @action(detail=False, methods=['post'])
     def list_duerecord_by_member_id(self, request):
-        order = request.data['order']
-        print(order) 
-        # query = Order.objects.raw(
-
-        # )
-        # serializer = ReturnRecordSerializer(query, many=True)
-        # return Response(serializer.data, status=status.HTTP_200_OK)
+        member_id = request.data['member']
+        query = ReturnRecord.objects.select_related('order').filter(is_due=True).filter(order__member_id=member_id)
+        # print(query.query)
+        serializer = ReturnRecordSerializer(query, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
     @action(detail=False, methods=['post'])
     def total_fine(self, request):
