@@ -87,8 +87,7 @@ class TransactionSerializer(serializers.ModelSerializer):
 
 
 class MemberSerializer(serializers.ModelSerializer):
-    user = UserSerializer()  # 唯讀
-
+    user = UserSerializer()
     class Meta:
         model = Member
         fields = '__all__'
@@ -101,10 +100,17 @@ class CartSerializer(serializers.ModelSerializer):
 
 
 class OrderSerializer(serializers.ModelSerializer):
+    # product = ProductSerializer(read_only=True)  # 唯讀
+    # product.field_name = ['product_name', 'product_size', 'product_price', 'product_image']
     class Meta:
         model = Order
         fields = '__all__'
 
+class OrderProductSerializer(serializers.ModelSerializer):
+    product = ProductSerializer(read_only=True) # 唯讀
+    class Meta:
+        model = Order
+        fields = '__all__'
 
 class ReturnRecordSerializer(serializers.ModelSerializer):
     class Meta:
