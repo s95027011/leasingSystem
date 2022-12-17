@@ -4,7 +4,7 @@ from rest_framework.decorators import action
 from rest_framework import viewsets, status, mixins, generics, permissions
 from rest_framework.response import Response
 from leasing.models import Type, Product, Item, Transaction, Member, Cart, Order, ReturnRecord
-from leasing.serializers import TypeSerializer, ProductSerializer, ItemSerializer, TransactionSerializer, MemberSerializer, CartSerializer, OrderSerializer, ReturnRecordSerializer, OrderProductSerializer
+from leasing.serializers import TypeSerializer, ProductSerializer, ItemSerializer, TransactionSerializer, MemberSerializer, CartSerializer, OrderSerializer, ReturnRecordSerializer, OrderByProductSerializer
 from knox.models import AuthToken
 from .serializers import UserSerializer, RegisterSerializer
 from django.contrib.auth import login
@@ -14,6 +14,7 @@ from knox.views import LoginView as KnoxLoginView
 from datetime import datetime, timedelta
 import uuid
 from itertools import chain
+from django.db.models import Avg, Count, Min, Sum
 # Create your views here.
 ################################################################
 ################################################################
@@ -226,13 +227,20 @@ class OrderViewSet(mixins.CreateModelMixin,
 
     @action(detail=False, methods=['post'])
     def list_order_overview(self, request):
-        item = request.data['item_id']
-        order_id = request.data['order_id']
+        item_id = request.data['item']
+        # order_id = request.data['id']
+        # product_id = request.data['product_id']
+        # query_item = Item.objects.all().filter(id=item_id)
+        # query_order = Order.objects.filter(item__in=query_item).select_related('Item').values_list('item','rent_datetime', 'order_datetime')
+        # id, item, member, member_id, order_datetime, order_status, rent_datetime, returnrecord, transaction, transaction_id
+        query_order = Order.objects.all().select_related('Item').values_list('item', 'order_datetime', 'rent_datetime')
         # query_order = Order.objects.all().filter(order_id__in=order_id)
-        query_order = Order.objects.all().filter(item_id__in=item)
-        query_product = Product.objects.all().filter(item_id__in=item).only('product_name', 'product_size', 'product_price', 'product_image')
+        # query_order = Order.objects.all().filter(item_id__in=item)
+
+        query_product = Product.objects.all().select_related('Item').values_list('id','product_name', 'product_size', 'product_price', 'product_image')
+        # count_product = Item.objects.annotate(count=Count('product_id')).filter(item__in=query_item)
         query = chain(query_order, query_product)
-        serializer = OrderSerializer(query, many=True)
+        serializer = OrderByProductSerializer(query, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
         # serializer = OrderProductSerializer(query, many=True)
 
