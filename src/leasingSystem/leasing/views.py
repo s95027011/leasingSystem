@@ -11,11 +11,10 @@ from django.contrib.auth import login
 from rest_framework.authtoken.serializers import AuthTokenSerializer
 from rest_framework.authentication import BasicAuthentication
 from knox.views import LoginView as KnoxLoginView
-from datetime import date, timedelta
+from datetime import date, timedelta, datetime
 from itertools import chain
 from rest_framework.decorators import api_view, permission_classes, authentication_classes
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
-from datetime import datetime
 # Create your views here.
 ################################################################
 ################################################################
@@ -421,5 +420,21 @@ class ReturnRecordViewSet(mixins.CreateModelMixin,
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     @action(detail=False, methods=['post'])
-    def get_total_fine(self, request):
-        pass
+    def get_total_penalty(self, request): #那筆訂單的罰款
+        return_record_id = request.data['id'] #request data 為 return_record 的 id (可視實際情況改)
+        is_due = ReturnRecord.objects.filter(id=return_record_id).values_list('is_due',flat=True)[0]
+        if not is_due:
+           return Response("期限內歸還，沒有罰款")
+        return_time = ReturnRecord.objects.filter(id=return_record_id).values_list('return_datetime',flat=True)[0]
+        order_id =str(ReturnRecord.objects.filter(id=id).values_list('order',flat=True)[0])
+        renting_time = Order.objects.filter(id=order_id).values_list('rent_datetime',flat=True)[0] #訂單租賃時間
+        expiration_date = renting_time+ timedelta(days = 7) #訂單到期時間(最晚歸還時間)
+        return_time = datetime.strptime(str(return_time), '%Y-%m-%d')
+        expiration_date = datetime.strptime(str(expiration_date), '%Y-%m-%d')
+        delta = abs(return_time-expiration_date).days #總逾期天數
+        itme_id= str(Order.objects.filter(id=order_id).values_list('item',flat=True)[0]) # Order裡面的item_id
+        product_id= str(Item.objects.filter(id=itme_id).values_list('product',flat=True)[0]) # Item裡面的product_id
+        product_penalty = str(Product.objects.filter(id=product_id).values_list('product_fine',flat=True)[0]) # 抓product的罰款金額
+        total_penalty = int(product_penalty)*delta #總罰款金額
+        return Response("罰款總額:"+str(total_penalty)+"元")
+        
