@@ -98,9 +98,17 @@ class UserAPI(generics.RetrieveAPIView):
 
 
 class TypeViewSet(viewsets.ModelViewSet):
-    permission_classes = [permissions.IsAuthenticated, permissions.IsAdminUser]
+    #permission_classes = [permissions.IsAuthenticated, permissions.IsAdminUser]
+    def get_permissions(self):
+        if self.action in ('create',):
+            self.permission_classes = [IsAdminUser]
+        return [permission() for permission in self.permission_classes]
     queryset = Type.objects.all()
     serializer_class = TypeSerializer
+
+    @permission_classes((IsAdminUser))
+    def create(self, request, *args, **kwargs):
+        return super().create(request, *args, **kwargs)
 # 權限OK
 
 
