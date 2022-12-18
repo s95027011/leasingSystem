@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from leasing.models import Type, Product, Item, Transaction, Member, Cart, Order, ReturnRecord, User
+from leasing.models import Type, Product, Item, Transaction, Member, Cart, Order, ReturnRecord, User, File
 from django.contrib.auth.models import User
 from rest_framework.validators import UniqueValidator
 from django.contrib.auth.password_validation import validate_password
@@ -137,10 +137,13 @@ class OrderProductSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
-class ReturnRecordSerializer(serializers.ModelSerializer):    
+class ReturnRecordSerializer(serializers.ModelSerializer):
     class Meta:
         model = ReturnRecord
         fields = '__all__'
-        
 
 
+class FileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = File
+        fields = ('file', 'remark', 'timestamp')

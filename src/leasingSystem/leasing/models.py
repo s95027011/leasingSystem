@@ -189,15 +189,23 @@ class Order(models.Model):
     order_status = models.CharField(
         choices=ORDER_STATUS, max_length=1, help_text='商品狀態', default='1')
 
-    #def get_renting_date(self, order):
+    # def get_renting_date(self, order):
     #   return Order.objects.filter(id=order).values('rent_datetime')
 
     def __str__(self):
         return str(self.id)
 
 # define DueRecord
+
+
 class ReturnRecord(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4)
     order = models.ForeignKey(Order, on_delete=models.CASCADE)
     return_datetime = models.DateField(auto_now=True)
     is_due = models.BooleanField(default=0)
+
+
+class File(models.Model):
+    file = models.FileField(blank=False, null=False)
+    remark = models.CharField(max_length=20)
+    timestamp = models.DateTimeField(auto_now_add=True)

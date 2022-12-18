@@ -44,10 +44,12 @@ urlpatterns = [
     # re_path(r'^admin?/'$) # 正規化
     path('admin/', admin.site.urls),
     path('api/register/', RegisterAPI.as_view(), name='register'),
-    path('api/login/', LoginAPI.as_view(), name='login'),
+    path('api/login/', LoginAPI.as_view()),
     path('api/user/', UserAPI.as_view()),
     path('api/logout/', knox_views.LogoutView.as_view(), name='logout'),
     path('api/logoutall/', knox_views.LogoutAllView.as_view(), name='logoutall'),
-    re_path(r'^api-auth/', include('rest_framework.urls', namespace='rest_framework')),
-    re_path(r'^api/', include(router.urls))
-]
+    re_path(r'^api-auth/', include('rest_framework.urls',
+            namespace='rest_framework')),
+    re_path(r'^api/', include(router.urls)),
+    path('api/upload/', views.FileView.as_view()),
+]+static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

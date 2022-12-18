@@ -1,3 +1,7 @@
+from rest_framework.views import APIView
+from .serializers import FileSerializer
+from rest_framework import status
+from rest_framework.parsers import MultiPartParser, FormParser
 from django.shortcuts import render, get_object_or_404
 from django.http import Http404
 from rest_framework.decorators import action
@@ -261,17 +265,18 @@ class OrderViewSet(mixins.CreateModelMixin,
             available_product_count = Item().get_available_product_count(product_id=product.id)
             if product_count > available_product_count:
                 invalid_product_list.append(product)
-            else: 
-                item_list = Item.objects.filter(product_id=product.id).filter(item_status='0')[:product_count]
+            else:
+                item_list = Item.objects.filter(product_id=product.id).filter(
+                    item_status='0')[:product_count]
                 for item in item_list:
                     valid_item_id_list.append(str(item.id))
         data = {
-                'rent_datetime': request.data['rent_datetime'], 
-                'order_status': '0', 
-                'transaction': request.data['transaction'], 
-                'member': member_id, 
-                'item' : valid_item_id_list,
-               }
+            'rent_datetime': request.data['rent_datetime'],
+            'order_status': '0',
+            'transaction': request.data['transaction'],
+            'member': member_id,
+            'item': valid_item_id_list,
+        }
 
         if invalid_product_list:
             message = ''
@@ -293,15 +298,14 @@ class OrderViewSet(mixins.CreateModelMixin,
 
         valid_item_list = []
         invalid_item_list = []
-    
-        
-        #檢查item狀態，如果可以出租，更改其狀態
+
+        # 檢查item狀態，如果可以出租，更改其狀態
         for item in item_list:
             if item.get_item_status() != '0':
                 invalid_item_list.append(item)
             else:
                 valid_item_list.append(item)
-        
+
         # 沒印出message !!
         if invalid_item_list:
             message = ''
@@ -309,15 +313,14 @@ class OrderViewSet(mixins.CreateModelMixin,
                 message += invalid_item.__str__() + '\n'
             message += '沒庫存'
             return Response(message)
-       
+
         for valid_item in valid_item_list:
             valid_item.set_item_stauts(1)
 
         now = date.today()
         if rent_datetime < now and rent_datetime > (now + timedelta(days=13)):
             return Response('出租時間不符合規定')
-        
-        
+
         return super().perform_create(serializer)
 
     def patch(self, request, pk=None):
@@ -375,22 +378,28 @@ class ReturnRecordViewSet(mixins.CreateModelMixin,
 
     queryset = ReturnRecord.objects.all()
     serializer_class = ReturnRecordSerializer
+    # def get_permissions(self):
+    #     if self.action in ('perform_create',):
+    #         self.permission_classes = [IsAdminUser]
+    #     return [permission() for permission in self.permission_classes]
 
+    # @permission_classes((IsAdminUser))
     def perform_create(self, serializer):
         order = serializer.validated_data['order']
         order = str(order)
-        renting_time = Order.objects.filter(id = order).values_list('rent_datetime',flat=True)
-        renting_time=renting_time[0]
+        renting_time = Order.objects.filter(
+            id=order).values_list('rent_datetime', flat=True)
+        renting_time = renting_time[0]
         now = date.today()
         now = datetime.strptime(str(now), '%Y-%m-%d')
-        renting_time=  datetime.strptime(str(renting_time), '%Y-%m-%d')
+        renting_time = datetime.strptime(str(renting_time), '%Y-%m-%d')
         delta = abs(now-renting_time)
-        is_due=False
-        if delta.days>7:
-           is_due = True
-        serializer.validated_data['is_due']=is_due
+        is_due = False
+        if delta.days > 7:
+            is_due = True
+        serializer.validated_data['is_due'] = is_due
         return super().perform_create(serializer)
-           
+
     @action(detail=False, methods=['post', 'get'])
     def list_returnrecord(self, request):
         query = ReturnRecord.objects.filter(is_due=False)
@@ -400,7 +409,8 @@ class ReturnRecordViewSet(mixins.CreateModelMixin,
     @action(detail=False, methods=['post'])
     def list_returnrecord_by_member_id(self, request):
         member_id = request.data['member']
-        query = ReturnRecord.objects.select_related('order').filter(is_due=False).filter(order__member_id=member_id)
+        query = ReturnRecord.objects.select_related('order').filter(
+            is_due=False).filter(order__member_id=member_id)
         # print(query.query)
         serializer = ReturnRecordSerializer(query, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
@@ -414,27 +424,50 @@ class ReturnRecordViewSet(mixins.CreateModelMixin,
     @action(detail=False, methods=['post'])
     def list_duerecord_by_member_id(self, request):
         member_id = request.data['member']
-        query = ReturnRecord.objects.select_related('order').filter(is_due=True).filter(order__member_id=member_id)
+        query = ReturnRecord.objects.select_related('order').filter(
+            is_due=True).filter(order__member_id=member_id)
         # print(query.query)
         serializer = ReturnRecordSerializer(query, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     @action(detail=False, methods=['post'])
-    def get_total_penalty(self, request): #那筆訂單的罰款
-        return_record_id = request.data['id'] #request data 為 return_record 的 id (可視實際情況改)
-        is_due = ReturnRecord.objects.filter(id=return_record_id).values_list('is_due',flat=True)[0]
+    def get_total_penalty(self, request):  # 那筆訂單的罰款
+        # request data 為 return_record 的 id (可視實際情況改)
+        return_record_id = request.data['id']
+        is_due = ReturnRecord.objects.filter(
+            id=return_record_id).values_list('is_due', flat=True)[0]
         if not is_due:
-           return Response("期限內歸還，沒有罰款")
-        return_time = ReturnRecord.objects.filter(id=return_record_id).values_list('return_datetime',flat=True)[0]
-        order_id =str(ReturnRecord.objects.filter(id=id).values_list('order',flat=True)[0])
-        renting_time = Order.objects.filter(id=order_id).values_list('rent_datetime',flat=True)[0] #訂單租賃時間
-        expiration_date = renting_time+ timedelta(days = 7) #訂單到期時間(最晚歸還時間)
+            return Response("期限內歸還，沒有罰款")
+        return_time = ReturnRecord.objects.filter(
+            id=return_record_id).values_list('return_datetime', flat=True)[0]
+        order_id = str(ReturnRecord.objects.filter(
+            id=id).values_list('order', flat=True)[0])
+        renting_time = Order.objects.filter(id=order_id).values_list(
+            'rent_datetime', flat=True)[0]  # 訂單租賃時間
+        expiration_date = renting_time + timedelta(days=7)  # 訂單到期時間(最晚歸還時間)
         return_time = datetime.strptime(str(return_time), '%Y-%m-%d')
         expiration_date = datetime.strptime(str(expiration_date), '%Y-%m-%d')
-        delta = abs(return_time-expiration_date).days #總逾期天數
-        itme_id= str(Order.objects.filter(id=order_id).values_list('item',flat=True)[0]) # Order裡面的item_id
-        product_id= str(Item.objects.filter(id=itme_id).values_list('product',flat=True)[0]) # Item裡面的product_id
-        product_penalty = str(Product.objects.filter(id=product_id).values_list('product_fine',flat=True)[0]) # 抓product的罰款金額
-        total_penalty = int(product_penalty)*delta #總罰款金額
+        delta = abs(return_time-expiration_date).days  # 總逾期天數
+        itme_id = str(Order.objects.filter(id=order_id).values_list(
+            'item', flat=True)[0])  # Order裡面的item_id
+        product_id = str(Item.objects.filter(id=itme_id).values_list(
+            'product', flat=True)[0])  # Item裡面的product_id
+        product_penalty = str(Product.objects.filter(id=product_id).values_list(
+            'product_fine', flat=True)[0])  # 抓product的罰款金額
+        total_penalty = int(product_penalty)*delta  # 總罰款金額
         return Response("罰款總額:"+str(total_penalty)+"元")
-        
+
+    def get_total_fine(self, request):
+        pass
+
+
+class FileView(APIView):
+    parser_classes = (MultiPartParser, FormParser)
+
+    def post(self, request, *args, **kwargs):
+        file_serializer = FileSerializer(data=request.data)
+        if file_serializer.is_valid():
+            file_serializer.save()
+            return Response(file_serializer.data, status=status.HTTP_201_CREATED)
+        else:
+            return Response(file_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
