@@ -131,10 +131,10 @@ class OrderSerializer(serializers.ModelSerializer):
 
 class OrderProductSerializer(serializers.ModelSerializer):
     product = ProductSerializer(read_only=True)  # 唯讀
-
     class Meta:
         model = Order
-        fields = '__all__'
+        fields = ['id', 'product']
+       
 
 
 class ReturnRecordSerializer(serializers.ModelSerializer):

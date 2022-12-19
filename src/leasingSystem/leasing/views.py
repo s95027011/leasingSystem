@@ -4,11 +4,12 @@ from rest_framework import status
 from rest_framework.parsers import MultiPartParser, FormParser
 from django.shortcuts import render, get_object_or_404
 from django.http import Http404
-from rest_framework.decorators import action
+from django.db.models import Sum
+from rest_framework.decorators import action, api_view, permission_classes, authentication_classes
 from rest_framework import viewsets, status, mixins, generics, permissions
 from rest_framework.response import Response
 from leasing.models import Type, Product, Item, Transaction, Member, Cart, Order, ReturnRecord
-from leasing.serializers import TypeSerializer, ProductSerializer, ItemSerializer, TransactionSerializer, MemberSerializer, CartSerializer, OrderSerializer, ReturnRecordSerializer
+from leasing.serializers import TypeSerializer, ProductSerializer, ItemSerializer, TransactionSerializer, MemberSerializer, CartSerializer, OrderSerializer, ReturnRecordSerializer, OrderProductSerializer
 from knox.models import AuthToken
 from .serializers import UserSerializer, RegisterSerializer, LoginSerializer
 from django.contrib.auth import login
@@ -17,8 +18,10 @@ from rest_framework.authentication import BasicAuthentication
 from knox.views import LoginView as KnoxLoginView
 from datetime import date, timedelta, datetime
 from itertools import chain
-from rest_framework.decorators import api_view, permission_classes, authentication_classes
+from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
+from django.core.serializers.json import DjangoJSONEncoder
+import json
 # Create your views here.
 ################################################################
 ################################################################
@@ -323,7 +326,7 @@ class OrderViewSet(mixins.CreateModelMixin,
             return Response(message)
 
         for valid_item in valid_item_list:
-            valid_item.set_item_stauts(1)
+            valid_item.set_item_status(1)
 
         now = date.today()
         if rent_datetime < now and rent_datetime > (now + timedelta(days=13)):
@@ -343,41 +346,102 @@ class OrderViewSet(mixins.CreateModelMixin,
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     @action(detail=False, methods=['post'])
+    def list_order_cost(self, request):
+        cost = 0
+        order_id = request.data['id']
+
+        query = Order.objects.filter(id=order_id).values('item__product__product_price')
+        for cursor in query:
+            cost += cursor['item__product__product_price']
+        ###
+        
+        query_order_item = Order.objects.all().filter(id=order_id).prefetch_related('Item').values_list('item','rent_datetime','order_datetime')
+        query_item_product = Item.objects.all().filter(id__in = query_order_item.only('item')).prefetch_related('Prouct').values_list('id', 'product_id', 'product_name', 'product_size', 'product_price', 'product_image')
+
+        ###
+        return Response(cost, status=status.HTTP_200_OK)
+    
+    @action(detail=False, methods=['post'])
     def list_order_by_member(self, request):
         member = request.data['member']
         query = Order.objects.all().filter(member_id__in=member)
         serializer = OrderSerializer(query, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
-    @action(detail=False, methods=['post'])
-    def list_order_overview(self, request):
-        item = request.data['item_id']
-        order_id = request.data['order_id']
-        # query_order = Order.objects.all().filter(order_id__in=order_id)
-        query_order = Order.objects.all().filter(item_id__in=item)
-        query_product = Product.objects.all().filter(item_id__in=item).only(
-            'product_name', 'product_size', 'product_price', 'product_image')
-        query = chain(query_order, query_product)
-        serializer = OrderSerializer(query, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        
+    # @action(detail=False, methods=['post'])
+    # def list_order_overview(self, request):
+    #     order_id = request.data['id']
+    #     query = Order.objects.prefetch_related('item__product').filter(id=order_id).values('item__product_id')
+ 
+    #     for curse in query:
+    #         print('product_id : ', curse['item__product_id'])
+    #         print(query.filter(product_id=curse['item__product_id']).count())
+    #         print('-----------')
+    #     print(query)
+    #     # print(OrderProductSerializer(query, many=True).data)
+    #     return Response('test')
+        # item = request.data['item_id']
+        # order_id = request.data['order_id']
+        # # query_order = Order.objects.all().filter(order_id__in=order_id)
+        # query_order = Order.objects.all().filter(item_id__in=item)
+        # query_product = Product.objects.all().filter(item_id__in=item).only(
+        #     'product_name', 'product_size', 'product_price', 'product_image')
+        # query = chain(query_order, query_product)
+        # serializer = OrderSerializer(query, many=True)
+        # return Response(serializer.data, status=status.HTTP_200_OK)
+
         # serializer = OrderProductSerializer(query, many=True)
 
         # query = Order.objects.raw(
         #     '''
-        #     select product_name, product_size, product_price, product_image, rent_time, return_time, SUM(product_id) as count
-        #     from leasing_order as o
-        #     left join leasing_order_item as order_item
-        #         on o.id = order_item.order_id
-        #     left join leasing_item as item
-        #         on order_item.item_id = item.id
-        #     left join leasing_product as product
-        #         on item.product_id = product.id
-        #     where o.id = %
-        #     group by product_name, product_size, product_price, product_image, rent_time, return_time;
+            # select product_name, product_size, product_price, product_image, rent_time, return_time, SUM(product_id) as count
+            # from leasing_order as o
+            # left join leasing_order_item as order_item
+            #     on o.id = order_item.order_id
+            # left join leasing_item as item
+            #     on order_item.item_id = item.id
+            # left join leasing_product as product
+            #     on item.product_id = product.id
+            # where o.id = %
+            # group by product_name, product_size, product_price, product_image, rent_time, return_time;
         # ''', [order_id])
 
         # pass
+   
+        
+# class OrderProducrViewSet(viewsets.GenericViewSet):
+#     queryset = Order.objects.all()
+#     serializer_class = OrderProductSerializer
 
+#     @action(detail=False, methods=['post'])
+#     def list_order_overview(self, request):
+#         order_id = request.data['id']
+#         print(order_id)
+#         query = Order.objects.filter(id=order_id).values(
+#                 'item__product', 
+#                 'item__product__product_name',
+#                 'item__product__product_price',
+#                 'item__product__product_image',
+#                 'item__product__product_description')
+#         print(query[0]['item__product'])
+#         print(json.dumps(list(query), cls=DjangoJSONEncoder))
+#         for cursor in query:
+#             data = {
+#                 "id": 2,
+#                 "product_name": "DUCK CEO",
+#                 "product_size": "m",
+#                 "product_price": 12000,
+#                 "product_fine": 1200,
+#                 "product_image": "image/2.jpg",
+#                 "product_description": "CEO",
+#                 "product_type": [
+#                     1
+#                 ]
+#             }
+#             serializer = ProductSerializer(data=date, many=True)
+#             if serializer.is_valid(raise_exception=True):
+#                 return Response(serializer.data)
 
 class ReturnRecordViewSet(mixins.CreateModelMixin,
                           mixins.ListModelMixin,
