@@ -60,6 +60,7 @@ class RegisterSerializer(serializers.ModelSerializer):
 
         userprofile = Member.objects.create(
             user=user,
+            member_name=validated_data['username'],
             member_sex=validated_data['sex'],
             member_addr=validated_data['addr'],
             member_birth=validated_data['birth'],
@@ -131,10 +132,10 @@ class OrderSerializer(serializers.ModelSerializer):
 
 class OrderProductSerializer(serializers.ModelSerializer):
     product = ProductSerializer(read_only=True)  # 唯讀
+
     class Meta:
         model = Order
         fields = ['id', 'product']
-       
 
 
 class ReturnRecordSerializer(serializers.ModelSerializer):

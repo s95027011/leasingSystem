@@ -89,7 +89,7 @@ class Item(models.Model):
         return Item.objects.filter(product_id=product_id).filter(item_status='0').count()
 
     def get_item_status(self):
-        return self.item_status 
+        return self.item_status
 
     def set_item_status(self, status):
         self.item_status = status
@@ -142,7 +142,7 @@ class Member(models.Model):
     SEX = (('0', '女性'), ('1', '男性'), ('2', '不選擇'))
     # id = models.UUIDField(primary_key=True, default=uuid.uuid4)
     user = models.OneToOneField(User, on_delete=models.CASCADE)
-    #member_name = models.CharField(blank=False, max_length=20)
+    member_name = models.CharField(blank=False, max_length=20)
     member_sex = models.CharField(choices=SEX, max_length=1, help_text='輸入性別')
     member_addr = models.CharField(blank=False, max_length=50)
     #member_email = models.EmailField(max_length=254)
