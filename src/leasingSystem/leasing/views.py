@@ -353,17 +353,16 @@ class OrderViewSet(mixins.CreateModelMixin,
     def list_order_cost(self, request):
         cost = 0
         order_id = request.data['id']
-
         query = Order.objects.filter(id=order_id).values('item__product__product_price')
         for cursor in query:
             cost += cursor['item__product__product_price']
-        ###
+        # ###
         
-        query_order_item = Order.objects.all().filter(id=order_id).prefetch_related('Item').values_list('item','rent_datetime','order_datetime')
-        query_item_product = Item.objects.all().filter(id__in = query_order_item.only('item')).prefetch_related('Prouct').values_list('id', 'product_id', 'product_name', 'product_size', 'product_price', 'product_image')
+        # query_order_item = Order.objects.all().filter(id=order_id).prefetch_related('Item').values_list('item','rent_datetime','order_datetime')
+        # query_item_product = Item.objects.all().filter(id__in = query_order_item.only('item')).prefetch_related('Prouct').values_list('id', 'product_id', 'product_name', 'product_size', 'product_price', 'product_image')
 
-        ###
-        return Response(cost, status=status.HTTP_200_OK)
+        # ###
+        return Response([{"cost":cost}], status=status.HTTP_200_OK)
     
     @action(detail=False, methods=['post'])
     def list_order_by_member(self, request):
@@ -474,6 +473,12 @@ class ReturnRecordViewSet(mixins.CreateModelMixin,
         if delta.days > 7:
             is_due = True
         serializer.validated_data['is_due'] = is_due
+        item_id = Order.objects.filter(id=order).values_list(
+        'item', flat=True)[0]  # Order裡面的item_id
+        item = Item.objects.get(id=item_id)
+        print(item.item_status)
+        item.set_item_status(0)
+        print(item.item_status)
         return super().perform_create(serializer)
 
     @action(detail=False, methods=['post', 'get'])
@@ -495,6 +500,7 @@ class ReturnRecordViewSet(mixins.CreateModelMixin,
     def list_duerecord(self, request):
         query = ReturnRecord.objects.filter(is_due=True)
         serializer = ReturnRecordSerializer(query, many=True)
+        print(serializer.data)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     @action(detail=False, methods=['post'])
@@ -504,6 +510,7 @@ class ReturnRecordViewSet(mixins.CreateModelMixin,
             is_due=True).filter(order__member_id=member_id)
         # print(query.query)
         serializer = ReturnRecordSerializer(query, many=True)
+        
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     @action(detail=False, methods=['post'])
@@ -516,8 +523,8 @@ class ReturnRecordViewSet(mixins.CreateModelMixin,
             return Response("期限內歸還，沒有罰款")
         return_time = ReturnRecord.objects.filter(
             id=return_record_id).values_list('return_datetime', flat=True)[0]
-        order_id = str(ReturnRecord.objects.filter(
-            id=id).values_list('order', flat=True)[0])
+        order_id = ReturnRecord.objects.filter(
+            id=return_record_id).values_list('order', flat=True)[0]
         renting_time = Order.objects.filter(id=order_id).values_list(
             'rent_datetime', flat=True)[0]  # 訂單租賃時間
         expiration_date = renting_time + timedelta(days=7)  # 訂單到期時間(最晚歸還時間)
@@ -531,7 +538,7 @@ class ReturnRecordViewSet(mixins.CreateModelMixin,
         product_penalty = str(Product.objects.filter(id=product_id).values_list(
             'product_fine', flat=True)[0])  # 抓product的罰款金額
         total_penalty = int(product_penalty)*delta  # 總罰款金額
-        return Response("罰款總額:"+str(total_penalty)+"元")
+        return Response([{"penalty":total_penalty}], status=status.HTTP_200_OK)
 
     def get_total_fine(self, request):
         pass
