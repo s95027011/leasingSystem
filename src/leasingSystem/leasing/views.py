@@ -130,7 +130,12 @@ class ProductViewSet(viewsets.ModelViewSet):
     def create(self, request, *args, **kwargs):
         return super().create(request, *args, **kwargs)
 # Admin can update product
-
+    @action(detail=False)
+    def query_product(self, request):
+        parm = request.query_params.get('query', None)
+        query = Product.objects.filter(product_name__contains = parm)
+        serializer = ProductSerializer(query, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 class ItemViewSet(mixins.CreateModelMixin,
                   mixins.ListModelMixin,
@@ -158,7 +163,7 @@ class ItemViewSet(mixins.CreateModelMixin,
     def list_item_by_product(self, request):
         product_id = request.query_params.get('product_id', None)
 
-        query = Item.objects.all().filter(product_id__in=product_id)
+        query = Item.objects.all().filter(product_id=product_id)
         serializer = ItemSerializer(query, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
@@ -196,7 +201,6 @@ class MemberViewSet(viewsets.ModelViewSet):
     @permission_classes((IsAdminUser))
     def list(self, request, *args, **kwargs):
         return super().list(request, *args, **kwargs)
-
 
 class CartViewSet(mixins.CreateModelMixin,
                   mixins.RetrieveModelMixin,
@@ -364,7 +368,7 @@ class OrderViewSet(mixins.CreateModelMixin,
     @action(detail=False, methods=['post'])
     def list_order_by_member(self, request):
         member = request.data['member']
-        query = Order.objects.all().filter(member_id__in=member)
+        query = Order.objects.all().filter(member_id=member)
         serializer = OrderSerializer(query, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
