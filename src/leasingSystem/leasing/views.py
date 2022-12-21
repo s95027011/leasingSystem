@@ -347,7 +347,7 @@ class OrderViewSet(mixins.CreateModelMixin,
 
     @action(detail=False, methods=['post'])
     def list_order_cost(self, request):
-        cost = 1
+        cost = 0
         order_id = request.data['id']
         order_item = Order.objects.filter(id=order_id)
         query_order_item = order_item.values('rent_datetime','order_datetime')
