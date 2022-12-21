@@ -53,4 +53,5 @@ urlpatterns = [
             namespace='rest_framework')),
     re_path(r'^api/', include(router.urls)),
     path('api/upload/', views.FileView.as_view()),
+    path('api/getmember/', views.GetMemberView.as_view())
 ]+static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

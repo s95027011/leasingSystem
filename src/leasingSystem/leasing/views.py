@@ -22,6 +22,7 @@ from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from django.core.serializers.json import DjangoJSONEncoder
 import json
+from rest_framework import generics
 # Create your views here.
 ################################################################
 ################################################################
@@ -130,12 +131,14 @@ class ProductViewSet(viewsets.ModelViewSet):
     def create(self, request, *args, **kwargs):
         return super().create(request, *args, **kwargs)
 # Admin can update product
+
     @action(detail=False)
     def query_product(self, request):
         parm = request.query_params.get('query', None)
-        query = Product.objects.filter(product_name__contains = parm)
+        query = Product.objects.filter(product_name__contains=parm)
         serializer = ProductSerializer(query, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
 
 class ItemViewSet(mixins.CreateModelMixin,
                   mixins.ListModelMixin,
@@ -201,6 +204,17 @@ class MemberViewSet(viewsets.ModelViewSet):
     @permission_classes((IsAdminUser))
     def list(self, request, *args, **kwargs):
         return super().list(request, *args, **kwargs)
+
+
+class GetMemberView(generics.ListAPIView):
+    permission_classes = [permissions.IsAdminUser, ]
+    serializer_class = MemberSerializer
+
+    def get_queryset(self):
+        name = self.request.query_params.get('member_name')
+        queryset = Member.objects.filter(member_name__icontains=name)
+        return queryset
+
 
 class CartViewSet(mixins.CreateModelMixin,
                   mixins.RetrieveModelMixin,
@@ -353,17 +367,30 @@ class OrderViewSet(mixins.CreateModelMixin,
     def list_order_cost(self, request):
         cost = 0
         order_id = request.data['id']
-        query = Order.objects.filter(id=order_id).values('item__product__product_price')
+
+        query = Order.objects.filter(id=order_id).values(
+            'item__product__product_price')
+        query = Order.objects.filter(id=order_id).values(
+            'item__product__product_price')
         for cursor in query:
             cost += cursor['item__product__product_price']
+        ###
+
+        query_order_item = Order.objects.all().filter(id=order_id).prefetch_related(
+            'Item').values_list('item', 'rent_datetime', 'order_datetime')
+        query_item_product = Item.objects.all().filter(id__in=query_order_item.only('item')).prefetch_related(
+            'Prouct').values_list('id', 'product_id', 'product_name', 'product_size', 'product_price', 'product_image')
         # ###
-        
+
         # query_order_item = Order.objects.all().filter(id=order_id).prefetch_related('Item').values_list('item','rent_datetime','order_datetime')
         # query_item_product = Item.objects.all().filter(id__in = query_order_item.only('item')).prefetch_related('Prouct').values_list('id', 'product_id', 'product_name', 'product_size', 'product_price', 'product_image')
 
+        ###
+        return Response(cost, status=status.HTTP_200_OK)
+
         # ###
-        return Response([{"cost":cost}], status=status.HTTP_200_OK)
-    
+        return Response([{"cost": cost}], status=status.HTTP_200_OK)
+
     @action(detail=False, methods=['post'])
     def list_order_by_member(self, request):
         member = request.data['member']
@@ -371,12 +398,11 @@ class OrderViewSet(mixins.CreateModelMixin,
         serializer = OrderSerializer(query, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
-        
     # @action(detail=False, methods=['post'])
     # def list_order_overview(self, request):
     #     order_id = request.data['id']
     #     query = Order.objects.prefetch_related('item__product').filter(id=order_id).values('item__product_id')
- 
+
     #     for curse in query:
     #         print('product_id : ', curse['item__product_id'])
     #         print(query.filter(product_id=curse['item__product_id']).count())
@@ -398,21 +424,21 @@ class OrderViewSet(mixins.CreateModelMixin,
 
         # query = Order.objects.raw(
         #     '''
-            # select product_name, product_size, product_price, product_image, rent_time, return_time, SUM(product_id) as count
-            # from leasing_order as o
-            # left join leasing_order_item as order_item
-            #     on o.id = order_item.order_id
-            # left join leasing_item as item
-            #     on order_item.item_id = item.id
-            # left join leasing_product as product
-            #     on item.product_id = product.id
-            # where o.id = %
-            # group by product_name, product_size, product_price, product_image, rent_time, return_time;
+        # select product_name, product_size, product_price, product_image, rent_time, return_time, SUM(product_id) as count
+        # from leasing_order as o
+        # left join leasing_order_item as order_item
+        #     on o.id = order_item.order_id
+        # left join leasing_item as item
+        #     on order_item.item_id = item.id
+        # left join leasing_product as product
+        #     on item.product_id = product.id
+        # where o.id = %
+        # group by product_name, product_size, product_price, product_image, rent_time, return_time;
         # ''', [order_id])
 
         # pass
-   
-        
+
+
 # class OrderProducrViewSet(viewsets.GenericViewSet):
 #     queryset = Order.objects.all()
 #     serializer_class = OrderProductSerializer
@@ -422,7 +448,7 @@ class OrderViewSet(mixins.CreateModelMixin,
 #         order_id = request.data['id']
 #         print(order_id)
 #         query = Order.objects.filter(id=order_id).values(
-#                 'item__product', 
+#                 'item__product',
 #                 'item__product__product_name',
 #                 'item__product__product_price',
 #                 'item__product__product_image',
@@ -474,7 +500,7 @@ class ReturnRecordViewSet(mixins.CreateModelMixin,
             is_due = True
         serializer.validated_data['is_due'] = is_due
         item_id = Order.objects.filter(id=order).values_list(
-        'item', flat=True)[0]  # Order裡面的item_id
+            'item', flat=True)[0]  # Order裡面的item_id
         item = Item.objects.get(id=item_id)
         print(item.item_status)
         item.set_item_status(0)
@@ -510,7 +536,7 @@ class ReturnRecordViewSet(mixins.CreateModelMixin,
             is_due=True).filter(order__member_id=member_id)
         # print(query.query)
         serializer = ReturnRecordSerializer(query, many=True)
-        
+
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     @action(detail=False, methods=['post'])
@@ -538,7 +564,7 @@ class ReturnRecordViewSet(mixins.CreateModelMixin,
         product_penalty = str(Product.objects.filter(id=product_id).values_list(
             'product_fine', flat=True)[0])  # 抓product的罰款金額
         total_penalty = int(product_penalty)*delta  # 總罰款金額
-        return Response([{"penalty":total_penalty}], status=status.HTTP_200_OK)
+        return Response([{"penalty": total_penalty}], status=status.HTTP_200_OK)
 
     def get_total_fine(self, request):
         pass
