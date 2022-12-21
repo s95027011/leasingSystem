@@ -37,7 +37,7 @@ class Product(models.Model):
     product_size = models.CharField(
         max_length=2,
         choices=PRODUCT_SIZE,
-        default='m',
+        default='M',
         help_text='服裝尺碼')
     product_type = models.ManyToManyField(Type, help_text='服裝類型')  # 多對多?
     product_price = models.PositiveIntegerField()
