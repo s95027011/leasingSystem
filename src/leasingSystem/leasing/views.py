@@ -4,7 +4,7 @@ from rest_framework import status
 from rest_framework.parsers import MultiPartParser, FormParser
 from django.shortcuts import render, get_object_or_404
 from django.http import Http404
-from django.db.models import Sum
+from django.db.models import Sum, F
 from rest_framework.decorators import action, api_view, permission_classes, authentication_classes
 from rest_framework import viewsets, status, mixins, generics, permissions
 from rest_framework.response import Response
