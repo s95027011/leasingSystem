@@ -170,7 +170,7 @@ class Cart(models.Model):
     product = models.ForeignKey(
         'Product', on_delete=models.CASCADE, null=True)
     product_count = models.PositiveIntegerField()
-
+        
     def get_product(self):
         return self.product
 
