@@ -4,7 +4,7 @@ from rest_framework import status
 from rest_framework.parsers import MultiPartParser, FormParser
 from django.shortcuts import render, get_object_or_404
 from django.http import Http404
-from django.db.models import Sum
+from django.db.models import Sum,F
 from rest_framework.decorators import action, api_view, permission_classes, authentication_classes
 from rest_framework import viewsets, status, mixins, generics, permissions
 from rest_framework.response import Response
@@ -349,18 +349,22 @@ class OrderViewSet(mixins.CreateModelMixin,
     def list_order_cost(self, request):
         cost = 0
         order_id = request.data['id']
+        order_item = Order.objects.filter(id=order_id)
+        query_order_item = order_item.values('rent_datetime','order_datetime')
+        order_data={}
+        query_product_item = Order.objects.filter(id=order_id).values('item__product__product_name','item__product__product_size','item__product__product_price','item__product__product_image')
+        product_item=query_product_item.annotate(product_name=F('item__product__product_name'), product_size=F('item__product__product_size'), product_price=F('item__product__product_price'), product_image=F('item__product__product_image'))
+        for num in range(len(product_item)):
+            product_item_data = product_item[num]
+            old_key = ['item__product__product_name','item__product__product_size','item__product__product_price','item__product__product_image']
+            for key in old_key:
+                product_item_data.pop(key, None)
+            order_data=product_item_data
+            order_data.update(query_order_item[num])
+            cost += product_item_data['product_price']
+            order_data.update({'all_cost':cost})
+        return Response(order_data, status=status.HTTP_200_OK)
 
-        query = Order.objects.filter(id=order_id).values('item__product__product_price')
-        for cursor in query:
-            cost += cursor['item__product__product_price']
-        ###
-        
-        query_order_item = Order.objects.all().filter(id=order_id).prefetch_related('Item').values_list('item','rent_datetime','order_datetime')
-        query_item_product = Item.objects.all().filter(id__in = query_order_item.only('item')).prefetch_related('Prouct').values_list('id', 'product_id', 'product_name', 'product_size', 'product_price', 'product_image')
-
-        ###
-        return Response(cost, status=status.HTTP_200_OK)
-    
     @action(detail=False, methods=['post'])
     def list_order_by_member(self, request):
         member = request.data['member']
