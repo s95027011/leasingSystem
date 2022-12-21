@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     'corsheaders',  # 加加加
     'phonenumber_field',
     'leasing',
+    'django_extensions',
 ]
 
 MIDDLEWARE = [
