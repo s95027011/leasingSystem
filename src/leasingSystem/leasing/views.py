@@ -23,6 +23,7 @@ from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from django.core.serializers.json import DjangoJSONEncoder
 import json
 from rest_framework import generics
+from django.contrib.auth.models import User
 # Create your views here.
 ################################################################
 ################################################################
@@ -58,47 +59,15 @@ class UserAPI(generics.RetrieveAPIView):
     permission_classes = [permissions.IsAuthenticated, ]
     serializer_class = UserSerializer
 
-    def get_object(self):
-        return self.request.user
+    # def get_object(self):
+    # return self.request.user
+    def get(self, request, *args, **kwargs):
+        user = get_object_or_404(User, username=self.request.user)
+        # print(user)
+        query = Member.objects.get(user=user)
+        member_serializer = MemberSerializer(query)
+        return Response(member_serializer.data)
 ################################################################
-################################################################
-
-
-# class SignUpAPI(generics.GenericAPIView):
-#     serializer_class = RegisterSerializer
-
-#     def post(self, request, *args, **kwargs):
-#         serializer = self.get_serializer(data=request.data)
-#         serializer.is_valid(raise_exception=True)
-#         user = serializer.save()
-#         token = AuthToken.objects.create(user)
-#         return Response({
-#             "users": UserSerializer(user, context=self.get_serializer_context()).data,
-#             "token": token[1]
-#         })
-
-
-# class SignInAPI(generics.GenericAPIView):
-#     serializer_class = LoginSerializer
-
-#     def post(self, request):
-#         serializer = self.get_serializer(data=request.data)
-#         serializer.is_valid(raise_exception=True)
-#         user = serializer.validated_data
-#         return Response({
-#             "user": UserSerializer(user, context=self.get_serializer_context()).data,
-#             "token": AuthToken.objects.create(user)[1]
-#         })
-
-
-# class MainUser(generics.RetrieveAPIView):
-#     permission_classes = [
-#         permissions.IsAuthenticated
-#     ]
-#     serializer_class = UserSerializer
-
-#     def get_object(self):
-#         return self.request.user
 
 
 class TypeViewSet(viewsets.ModelViewSet):
@@ -368,19 +337,22 @@ class OrderViewSet(mixins.CreateModelMixin,
         cost = 0
         order_id = request.data['id']
         order_item = Order.objects.filter(id=order_id)
-        query_order_item = order_item.values('rent_datetime','order_datetime')
-        order_data={}
-        query_product_item = Order.objects.filter(id=order_id).values('item__product__product_name','item__product__product_size','item__product__product_price','item__product__product_image')
-        product_item=query_product_item.annotate(product_name=F('item__product__product_name'), product_size=F('item__product__product_size'), product_price=F('item__product__product_price'), product_image=F('item__product__product_image'))
+        query_order_item = order_item.values('rent_datetime', 'order_datetime')
+        order_data = {}
+        query_product_item = Order.objects.filter(id=order_id).values(
+            'item__product__product_name', 'item__product__product_size', 'item__product__product_price', 'item__product__product_image')
+        product_item = query_product_item.annotate(product_name=F('item__product__product_name'), product_size=F(
+            'item__product__product_size'), product_price=F('item__product__product_price'), product_image=F('item__product__product_image'))
         for num in range(len(product_item)):
             product_item_data = product_item[num]
-            old_key = ['item__product__product_name','item__product__product_size','item__product__product_price','item__product__product_image']
+            old_key = ['item__product__product_name', 'item__product__product_size',
+                       'item__product__product_price', 'item__product__product_image']
             for key in old_key:
                 product_item_data.pop(key, None)
-            order_data=product_item_data
+            order_data = product_item_data
             order_data.update(query_order_item[num])
             cost += product_item_data['product_price']
-            order_data.update({'all_cost':cost})
+            order_data.update({'all_cost': cost})
         return Response(order_data, status=status.HTTP_200_OK)
     # def list_order_cost(self, request):
     #     cost = 0
