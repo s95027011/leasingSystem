@@ -5,7 +5,8 @@ from rest_framework.validators import UniqueValidator
 from django.contrib.auth.password_validation import validate_password
 from django.contrib.auth import authenticate
 from django.core.exceptions import ValidationError
-from django.core.validators import MinLengthValidator
+from django.core.validators import MinLengthValidator, RegexValidator
+import re
 
 
 def only_int(value):
@@ -24,7 +25,8 @@ class UserSerializer(serializers.ModelSerializer):
 class RegisterSerializer(serializers.ModelSerializer):
     username = serializers.CharField(
         required=True,
-        validators=[UniqueValidator(queryset=User.objects.all())],
+        validators=[UniqueValidator(
+            queryset=User.objects.all()), RegexValidator(regex=re.compile(r'^[a-z0-9\-]+$'))],
     )
 
     password = serializers.CharField(write_only=True, required=True, validators=[validate_password],
