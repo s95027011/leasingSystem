@@ -37,7 +37,7 @@ class RegisterSerializer(serializers.ModelSerializer):
     birth = serializers.DateField()
     phone = serializers.CharField(
         validators=[
-            MinLengthValidator(3), only_int], max_length=10, write_only=True)
+            MinLengthValidator(10), only_int], max_length=10, write_only=True)
 
     class Meta:
         model = User
