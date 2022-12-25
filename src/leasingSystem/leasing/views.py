@@ -19,6 +19,7 @@ from knox.views import LoginView as KnoxLoginView
 from datetime import date, timedelta, datetime
 from itertools import chain
 from rest_framework.views import APIView
+from rest_framework import filters
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from django.core.serializers.json import DjangoJSONEncoder
 import json
@@ -161,6 +162,8 @@ class TransactionViewSet(mixins.CreateModelMixin,
 
 
 class MemberViewSet(viewsets.ModelViewSet):
+    search_fields = ['member_name']
+    filter_backends = (filters.SearchFilter,)
     queryset = Member.objects.all()
     serializer_class = MemberSerializer
 
@@ -238,6 +241,8 @@ class OrderViewSet(mixins.CreateModelMixin,
                    mixins.RetrieveModelMixin,
                    mixins.DestroyModelMixin,
                    viewsets.GenericViewSet):
+    search_fields = ['id']
+    filter_backends = (filters.SearchFilter,)
     queryset = Order.objects.all()
     serializer_class = OrderSerializer
 
@@ -466,7 +471,8 @@ class ReturnRecordViewSet(mixins.CreateModelMixin,
                           mixins.ListModelMixin,
                           mixins.RetrieveModelMixin,
                           viewsets.GenericViewSet):
-
+    search_fields = ['member_name']
+    filter_backends = (filters.SearchFilter,)
     queryset = ReturnRecord.objects.all()
     serializer_class = ReturnRecordSerializer
     # def get_permissions(self):
