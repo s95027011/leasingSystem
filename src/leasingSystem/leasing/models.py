@@ -17,8 +17,16 @@ def only_int(value):
 
 
 class Type(models.Model):
+    TYPE_STATUS = (
+        ('0', '刪除'),
+        ('1', '保留'),
+    )
+    type_status = models.CharField(
+        max_length=1,
+        choices=TYPE_STATUS,
+        default='1',
+        help_text='Type 狀態')
     name = models.CharField(max_length=20, unique=True)
-
     def __str__(self):
         return self.name
 
@@ -33,6 +41,15 @@ class Product(models.Model):
         ('L', 'large'),
         ('XL', 'extra large'),
     )
+    PRODUCT_STATUS = (
+        ('0', '刪除'),
+        ('1', '保留'),
+    )
+    product_status = models.CharField(
+        max_length=1,
+        choices=PRODUCT_STATUS,
+        default='1',
+        help_text='Type 狀態')
     product_name = models.CharField(max_length=20)
     product_size = models.CharField(
         max_length=2,
@@ -195,7 +212,6 @@ class Order(models.Model):
     rent_datetime = models.DateField()
     order_status = models.CharField(
         choices=ORDER_STATUS, max_length=1, help_text='商品狀態', default='1')
-
     # def get_renting_date(self, order):
     #   return Order.objects.filter(id=order).values('rent_datetime')
 
