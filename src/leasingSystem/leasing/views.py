@@ -236,11 +236,7 @@ class CartViewSet(mixins.CreateModelMixin,
         return Response('sucess', status=status.HTTP_200_OK)
 
 
-class OrderViewSet(mixins.CreateModelMixin,
-                   mixins.ListModelMixin,
-                   mixins.RetrieveModelMixin,
-                   mixins.DestroyModelMixin,
-                   viewsets.GenericViewSet):
+class OrderViewSet(viewsets.ModelViewSet):
     search_fields = ['id']
     filter_backends = (filters.SearchFilter,)
     queryset = Order.objects.all()
@@ -326,16 +322,16 @@ class OrderViewSet(mixins.CreateModelMixin,
 
         return super().perform_create(serializer)
 
-    def patch(self, request, pk=None):
-        model = get_object_or_404(Order, pk=pk)
-        order_status = request.data['order_status']
-        data = {'order_stauts': order_status}
-        serializer = OrderSerializer(model, data=data, partial=True)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_200_OK)
-        # return a meaningful error response
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    # def patch(self, request, pk=None):
+    #     model = get_object_or_404(Order, pk=pk)
+    #     order_status = request.data['order_status']
+    #     data = {'order_stauts': order_status}
+    #     serializer = OrderSerializer(model, data=data, partial=True)
+    #     if serializer.is_valid():
+    #         serializer.save()
+    #         return Response(serializer.data, status=status.HTTP_200_OK)
+    #     # return a meaningful error response
+    #     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     @action(detail=False, methods=['post'])
     def list_order_cost(self, request):
@@ -541,8 +537,8 @@ class ReturnRecordViewSet(mixins.CreateModelMixin,
         return_record_id = request.data['id']
         is_due = ReturnRecord.objects.filter(
             id=return_record_id).values_list('is_due', flat=True)[0]
-        #if not is_due:
-           # return Response("期限內歸還，沒有罰款")
+        # if not is_due:
+        # return Response("期限內歸還，沒有罰款")
         return_time = ReturnRecord.objects.filter(
             id=return_record_id).values_list('return_datetime', flat=True)[0]
         order_id = ReturnRecord.objects.filter(
@@ -553,16 +549,16 @@ class ReturnRecordViewSet(mixins.CreateModelMixin,
         return_time = datetime.strptime(str(return_time), '%Y-%m-%d')
         expiration_date = datetime.strptime(str(expiration_date), '%Y-%m-%d')
         delta = abs(return_time-expiration_date).days  # 總逾期天數
-        
+
         item_id = Order.objects.filter(id=order_id).values_list(
             'item', flat=True)  # Order裡面的item_id
         item_count = item_id.count()
-        total_penalty= 0
+        total_penalty = 0
         for i in range(item_count):
             product_id = str(Item.objects.filter(id=str(item_id[i])).values_list(
-            'product', flat=True)[0])  # Item裡面的product_id
+                'product', flat=True)[0])  # Item裡面的product_id
             product_penalty = str(Product.objects.filter(id=product_id).values_list(
-            'product_fine', flat=True)[0])  # 抓product的罰款金額
+                'product_fine', flat=True)[0])  # 抓product的罰款金額
             total_penalty += int(product_penalty)*delta  # 總罰款金額
         return Response([{"penalty": total_penalty}], status=status.HTTP_200_OK)
 
