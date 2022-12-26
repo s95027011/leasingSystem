@@ -500,7 +500,7 @@ class ReturnRecordViewSet(mixins.CreateModelMixin,
         item_count = item_id.count()
         for i in range(item_count):
             item = Item.objects.get(id=item_id[i])
-            item.set_item_status(1)
+            item.set_item_status(0)
         return super().perform_create(serializer)
 
     @action(detail=False, methods=['post', 'get'])
