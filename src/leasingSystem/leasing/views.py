@@ -537,8 +537,8 @@ class ReturnRecordViewSet(mixins.CreateModelMixin,
         return_record_id = request.data['id']
         is_due = ReturnRecord.objects.filter(
             id=return_record_id).values_list('is_due', flat=True)[0]
-        # if not is_due:
-        # return Response("期限內歸還，沒有罰款")
+        if not is_due:
+            return Response("期限內歸還，沒有罰款")
         return_time = ReturnRecord.objects.filter(
             id=return_record_id).values_list('return_datetime', flat=True)[0]
         order_id = ReturnRecord.objects.filter(
