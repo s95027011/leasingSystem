@@ -496,11 +496,11 @@ class ReturnRecordViewSet(mixins.CreateModelMixin,
             is_due = True
         serializer.validated_data['is_due'] = is_due
         item_id = Order.objects.filter(id=order).values_list(
-            'item', flat=True)[0]  # Order裡面的item_id
-        item = Item.objects.get(id=item_id)
-        print(item.item_status)
-        item.set_item_status(0)
-        print(item.item_status)
+            'item', flat=True)  # Order裡面的item_id
+        item_count = item_id.count()
+        for i in range(item_count):
+            item = Item.objects.get(id=item_id[i])
+            item.set_item_status(1)
         return super().perform_create(serializer)
 
     @action(detail=False, methods=['post', 'get'])
@@ -541,8 +541,8 @@ class ReturnRecordViewSet(mixins.CreateModelMixin,
         return_record_id = request.data['id']
         is_due = ReturnRecord.objects.filter(
             id=return_record_id).values_list('is_due', flat=True)[0]
-        if not is_due:
-            return Response("期限內歸還，沒有罰款")
+        #if not is_due:
+           # return Response("期限內歸還，沒有罰款")
         return_time = ReturnRecord.objects.filter(
             id=return_record_id).values_list('return_datetime', flat=True)[0]
         order_id = ReturnRecord.objects.filter(
@@ -553,13 +553,17 @@ class ReturnRecordViewSet(mixins.CreateModelMixin,
         return_time = datetime.strptime(str(return_time), '%Y-%m-%d')
         expiration_date = datetime.strptime(str(expiration_date), '%Y-%m-%d')
         delta = abs(return_time-expiration_date).days  # 總逾期天數
-        itme_id = str(Order.objects.filter(id=order_id).values_list(
-            'item', flat=True)[0])  # Order裡面的item_id
-        product_id = str(Item.objects.filter(id=itme_id).values_list(
+        
+        item_id = Order.objects.filter(id=order_id).values_list(
+            'item', flat=True)  # Order裡面的item_id
+        item_count = item_id.count()
+        total_penalty= 0
+        for i in range(item_count):
+            product_id = str(Item.objects.filter(id=str(item_id[i])).values_list(
             'product', flat=True)[0])  # Item裡面的product_id
-        product_penalty = str(Product.objects.filter(id=product_id).values_list(
+            product_penalty = str(Product.objects.filter(id=product_id).values_list(
             'product_fine', flat=True)[0])  # 抓product的罰款金額
-        total_penalty = int(product_penalty)*delta  # 總罰款金額
+            total_penalty += int(product_penalty)*delta  # 總罰款金額
         return Response([{"penalty": total_penalty}], status=status.HTTP_200_OK)
 
     def get_total_fine(self, request):
